@@ -1,6 +1,8 @@
 ---
 archive: CTF
-tags: #Web #xsLeaks #SOMEattack
+tags: 
+  - xsLeaks
+  - SOMEattack
 Date: 2023/1/10
 ---
 

@@ -1,6 +1,8 @@
 ---
 archive: CTF
-tags: #Web #PHP
+tags: 
+  - SSRF
+  - 代码注入
 Date: 2023/1/10
 ---
 
