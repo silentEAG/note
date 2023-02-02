@@ -1,3 +1,106 @@
-site_name: SilentE's Docs
+site_name: SilentE 的笔记本
+site_url: https://note.silente.dev/
+repo_name: SilentEAG/note
+repo_url: https://github.com/silentEAG/note/
+edit_uri: tree/master/docs
+site_description: SilentE 的笔记本
+copyright: Copyright &copy; 2023 <a href="https://github.com/silentEAG" target="_blank" rel="noopener">SilentE</a>
+
 theme:
   name: material
+  language: 'zh'
+  icon:
+    logo: material/notebook-heart-outline
+    edit: material/pencil 
+    view: material/eye
+  custom_dir: overrides
+  features:
+    - toc.follow
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.footer
+    - navigation.indexes
+    - navigation.top
+    - content.action.edit
+    - content.code.copy
+    - content.code.annotate
+  palette:
+    # light mode
+    - scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
+      primary: blue
+      accent: blue
+    # dark mode
+    - scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Switch to light mode
+      primary: light blue
+      accent: light blue
+
+plugins:
+  - search
+  - git-revision-date-localized:
+      enable_creation_date: true
+      type: datetime
+
+extra_css:
+  - stylesheets/extra.css
+
+extra:
+  social:
+    - icon: fontawesome/brands/github 
+      link: https://github.com/silentEAG
+  analytics:
+    provider: google
+    property: G-0PRB4JKCNY
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - def_list
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+
+nav:
+  - Home:
+    - index.md
+  - Web:
+    - Web/index.md
+    - 知识点: 
+      - Web/keypoint/python-proto.md
+    - Java安全:
+      - Web/Java/SnakeYaml.md
+    - Writeups:
+      - Web/Writeups/RW2023-Astlibra.md
+      - Web/Writeups/RW2023-TheCultOf8bit.md
+  - Rust:
+    - Rust/index.md
+    - Rust/lifetime.md
+  - Blockchain:
+    - Blockchain/index.md
+    - 知识点:
+      - Blockchain/keypoint/Solidity.md
+  - Misc:
+    - Misc/index.md
+    - 编译原理:
+      - Misc/compile/LLVM-tutor.md
+    - 环境搭建:
+      - Misc/environ/Yubikey.md
+      - Misc/environ/WSLconfig.md
+      
+
+
+# TODO: 社交卡片
+# TODO: 标签
+# TODO: 评论
