@@ -14,6 +14,7 @@ theme:
     edit: material/pencil 
     view: material/eye
   custom_dir: overrides
+  font: false
   features:
     - toc.follow
     - navigation.instant
@@ -50,6 +51,8 @@ plugins:
       tags_file: tags.md
 
 extra_css:
+  - https://cdn.staticfile.org/lxgw-wenkai-screen-webfont/1.6.0/style.css
+  - stylesheets/font.css
   - stylesheets/extra.css
 
 extra:
@@ -106,3 +109,4 @@ nav:
 # TODO: 社交卡片
 # TODO: 标签
 # TODO: 评论
+# TODO: 自建font cdn
