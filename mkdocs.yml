@@ -52,7 +52,7 @@ plugins:
 
 extra_css:
   - https://cdn.staticfile.org/lxgw-wenkai-screen-webfont/1.6.0/style.css
-  - stylesheets/font.css
+  - https://blog-static.cnblogs.com/files/wgb1234/monoFont.css
   - stylesheets/extra.css
 
 extra:
