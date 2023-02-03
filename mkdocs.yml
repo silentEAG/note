@@ -9,6 +9,7 @@ copyright: Copyright &copy; 2023 <a href="https://github.com/silentEAG" target="
 theme:
   name: material
   language: 'zh'
+  favicon: https://cdn.silente.top/img/face.png
   icon:
     logo: material/notebook-heart-outline
     edit: material/pencil 
@@ -18,7 +19,6 @@ theme:
   features:
     - toc.follow
     - navigation.instant
-    - navigation.tracking
     - navigation.tabs
     - navigation.footer
     - navigation.indexes
@@ -43,7 +43,6 @@ theme:
       accent: light blue
 
 plugins:
-  - rss
   - search
   - git-revision-date-localized:
       enable_creation_date: true
@@ -53,7 +52,7 @@ plugins:
 
 extra_css:
   - https://cdn.staticfile.org/lxgw-wenkai-screen-webfont/1.6.0/style.css
-  - stylesheets/font.css
+  - https://cdn.silente.top/source/font.css
   - stylesheets/extra.css
 
 extra:
@@ -87,6 +86,7 @@ nav:
       - Web/keypoint/python-proto.md
     - Java安全:
       - Web/Java/SnakeYaml.md
+      - Web/Java/JavaChain.md
     - Writeups:
       - Web/Writeups/RW2023-Astlibra.md
       - Web/Writeups/RW2023-TheCultOf8bit.md

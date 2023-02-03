@@ -34,7 +34,7 @@ LLVM（Low Level Virtual Machine）是一种模块化的编译器框架，在设
 -   **Optimizer:优化器**  中间代码优化
 -   **Backend:后端**  生成机器码
 
-![](https://image.silente.top/img/3008243-b517c768f5a97607.webp)
+![](https://cdn.silente.top/img/3008243-b517c768f5a97607.webp)
 
 其特点有：
 -   不同的前端后端使用统一的中间代码 LLVM Intermediate Representation (LLVM IR)
@@ -63,7 +63,7 @@ From SG
 
 - [中间表示](https://spa-book.pblo.gq/ch1/2intermediaterepresentation)
 - [官方文档](https://llvm.org/docs/)
-![](https://image.silente.top/img/1596887-20220927134430112-1076343907.png)
+![](https://cdn.silente.top/img/1596887-20220927134430112-1076343907.png)
 ### IR 和 Pass
 
 **LLVM IR** 是 **LLVM Intermediate Representation**，它是一种 low-level languange，由前端从源代码翻译而来。对于 C/C++来说， `clang` 便是 LLVM 架构的前端；对于 Rust 来说，`rustc` 是 LLVM 架构的前端。

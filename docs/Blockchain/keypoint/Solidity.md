@@ -34,7 +34,7 @@ modifier auth {
 
 参数编码需要按照 ABI 来构造：(取自官方 WP)
 
-![](https://image.silente.top/img/s239.jpg)
+![](https://cdn.silente.top/img/s239.jpg)
 
 这里需要我们拥有一些固定 suffex 的账号地址，可以用这个[网站](https://www.createmytoken.com/tools/ethereum-vanity-address-generator/)爆破生成。
 
@@ -108,10 +108,10 @@ contract Hacker {
     }
 }
 ```
-![](https://image.silente.top/img/s240.png)
+![](https://cdn.silente.top/img/s240.png)
 
 `Bank` 合约中原有 2 eth，`Hacker` 合约地址有 1 eth，然后直接执行 `hack` ：
-![](https://image.silente.top/img/s241.png)
+![](https://cdn.silente.top/img/s241.png)
 
 可以看到取一次操作实际进行了两次转账，而且存款也因为用的 `uint256` 没上 SafeMath 导致了整型下溢。
 
@@ -410,7 +410,7 @@ contract Bank {
 - sendEther 函数：合约私有，给合约发 ether。
 - sendFlag 函数：合约私有，需要有 `100000000 ether` 然后发 flag。
 
-![](https://image.silente.top/img/s246.png)
+![](https://cdn.silente.top/img/s246.png)
 
 结构体未初始化漏洞+数组存储方式+mapping存储方式+控制程序执行流。
 
@@ -427,13 +427,13 @@ idx 2309889839212284910379004245778737706504599740558682499191559115052141390416
 
 需要将地址改成 `070f`。
 
-![](/PIC/s248.png)
+![202302032245038](https://cdn.silente.top/img/202302032245038.png)
 
 然后先 `deposit(0x000000000000000000000000)` 并传 1 eth 让`callback` 为 `sendEther`；然后调用 `withdraw(0, 0x111111111111110000070f00)`目的在于覆写 `safeobx[idx]` 处的 `unused (15) | hash (12) | callback (4) | done (1)`，然后调用 `withdraw(idx, 0x000000000000000000000000)` 完成触发：
 
-![](https://image.silente.top/img/s247.png)
+![](https://cdn.silente.top/img/s247.png)
 
-![](https://image.silente.top/img/s249.png)
+![](https://cdn.silente.top/img/s249.png)
 
 当然，这个是利用 `origin(20) | triedPass(12)` 来达成覆盖，也可以使用 `failedAttempt` 的 `idx`，因为这一 slot 内容也是完全可控的。
 

@@ -109,7 +109,7 @@ sub   rsa4096 2023-01-15 [A] [expires: 2024-01-15]
 > git config --global user.name [github]
 ```
 
-![[verify.png]]
+![verify](https://cdn.silente.top/img/verify.png)
 
 ## 其他
 

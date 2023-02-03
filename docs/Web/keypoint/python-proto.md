@@ -109,3 +109,5 @@ func_test('SilentE')
 - 直接使用文章中的 merge 函数
 - 使用 pydash 的 `set_`  (Update: 作者已 Fix，新版本已经寄了)
 - 漏洞代码 `obj.__setattr__/__setitem__(k: string, v: string)` 中 obj，k，v 完全可控。
+
+![pydash_fix](https://cdn.silente.top/img/pydash_fix.png)

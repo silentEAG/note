@@ -17,7 +17,7 @@ where
 	}
 }
 ```
-![](https://image.silente.top/img/p1.png)
+![](https://cdn.silente.top/img/p1.png)
 
 解决：[stackoverflow](https://stackoverflow.com/questions/43554679/how-to-fix-lifetime-error-when-function-returns-a-serde-deserialize-type) 中提到有个 [serde issue891](https://github.com/serde-rs/serde/issues/891)，使用 `DeserializeOwned` 替换 `Deserialize<'a>`。
 

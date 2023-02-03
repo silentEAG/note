@@ -264,7 +264,7 @@ http://localhost:12345?<space>onclick=eval(atob(`base64code`))
 
 两种方法的回显：
 
-![](https://image.silente.top/img/p3.png)
+![](https://cdn.silente.top/img/p3.png)
 
 ## 总结
 
