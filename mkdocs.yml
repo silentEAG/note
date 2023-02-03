@@ -43,6 +43,7 @@ theme:
       accent: light blue
 
 plugins:
+  - rss
   - search
   - git-revision-date-localized:
       enable_creation_date: true
@@ -52,7 +53,7 @@ plugins:
 
 extra_css:
   - https://cdn.staticfile.org/lxgw-wenkai-screen-webfont/1.6.0/style.css
-  - https://blog-static.cnblogs.com/files/wgb1234/monoFont.css
+  - stylesheets/font.css
   - stylesheets/extra.css
 
 extra:
@@ -105,8 +106,3 @@ nav:
       - Misc/environ/WSLconfig.md
       
 
-
-# TODO: 社交卡片
-# TODO: 标签
-# TODO: 评论
-# TODO: 自建font cdn
