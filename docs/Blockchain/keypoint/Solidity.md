@@ -17,6 +17,7 @@ function giveMeFlag() public {
 ```
 
 需要满足的条件是
+
 1. `stage` 为 `3`
 2. 自己的票数最多
 3. 自己的 `policies` 应该是 `Give me the flag, please`
@@ -40,8 +41,8 @@ modifier auth {
 
 ## Ethereum Storage
 
-[官方文档 - 状态变量在储存中的布局](https://learnblockchain.cn/docs/solidity/internals/layout_in_storage.html)
-[以太坊智能合约 OPCODE 逆向之理论基础篇](https://paper.seebug.org/640/)
+- [官方文档 - 状态变量在储存中的布局](https://learnblockchain.cn/docs/solidity/internals/layout_in_storage.html)
+- [以太坊智能合约 OPCODE 逆向之理论基础篇](https://paper.seebug.org/640/)
 
 ## Re-Entrancy
 
@@ -437,13 +438,166 @@ idx 2309889839212284910379004245778737706504599740558682499191559115052141390416
 
 当然，这个是利用 `origin(20) | triedPass(12)` 来达成覆盖，也可以使用 `failedAttempt` 的 `idx`，因为这一 slot 内容也是完全可控的。
 
-### 其他
 
-https://ethernaut.openzeppelin.com/ 入门game
-https://capturetheether.com/challenges/ 一些合约 challenges
-https://faucets.chain.link/ 目前找到的唯一能用的 testnet 上的水龙头
-https://www.createmytoken.com/tools/ethereum-vanity-address-generator/ 生成固定前后缀地址
-https://ropsten.etherscan.io/bytecode-decompiler 在线反编译，但是好像结果 opcode 跟部署的有点不一样
-https://ethervm.io/decompile 在线反编译opcode
-https://www.4byte.directory/ 找 Func Selector
+## 模板
+
+??? info "template.py"
+    ```py
+    from web3 import Web3
+    import utils
+
+    w3 = Web3(Web3.HTTPProvider('http://xxx/'))
+    exploit = ""
+    privateKey = b''
+    acct = w3.eth.account.from_key(privateKey)
+    hacker = acct.address
+    contractAddress = None
+
+
+    def get_txn(src, dst, data, value=0, gas=0x200000):
+        return {
+            "chainId": w3.eth.chainId,
+            "from": src,
+            "to": dst,
+            "gasPrice": w3.toWei(1.1, 'gwei'),
+            "gas": gas,
+            "value": w3.toWei(value, 'gwei'),
+            "nonce": w3.eth.getTransactionCount(src),
+            "data": data
+        }
+
+
+    def transact(src, dst, data, value=0, gas=0x200000):
+        data = get_txn(src, dst, data, value, gas)
+        transaction = w3.eth.account.signTransaction(data, privateKey).rawTransaction
+        txn_hash = w3.eth.sendRawTransaction(transaction).hex()
+        txn_receipt = w3.eth.waitForTransactionReceipt(txn_hash)
+        return txn_receipt
+
+
+    def deploy():
+        print(f"[+] Hacker address: {hacker}, balance: {w3.eth.getBalance(acct.address)}")
+        print("[+] Deploying exploit contract...")
+        txn_receipt = transact(hacker, None, exploit)
+        print(f"[*] Exploit contract deployed at {txn_receipt['contractAddress']}")
+        contractAddress = txn_receipt['contractAddress']
+
+
+    def interact(contract, data):
+        pass
+
+
+    def check():
+        if w3.isConnected() is False:
+            raise "Connection Failed"
+
+        print(f"[*] chainId: {w3.eth.chainId}\n"
+            f"[*] privateKey: 0x{privateKey.hex()}\n"
+            f"[*] accountAddress: {hacker}\n"
+            f"[*] accountBalance: {w3.eth.getBalance(hacker)} wei\n")
+
+
+    def main():
+        # print(f"[+] Hacker address: {hacker}, balance: {w3.eth.getBalance(acct.address)}")
+        # print("[+] Deploying exploit contract...")
+        # txn_receipt = transact(hacker, None, exploit)
+        # print(txn_receipt)
+        # print("[*] Exploit contract deployed at", txn_receipt['contractAddress'])
+        # contractAddress = txn_receipt['contractAddress']
+        #
+        # res = transact(hacker, contractAddress, "0x80f9f254000000000000000000000000000000000000000000000000000000000000003c")
+        # print(res)
+        #
+        # res = transact(hacker, contractAddress, "0xf9633930")
+        #
+        # print(res['logs'])
+        pass
+
+
+    if __name__ == '__main__':
+        check()
+        main()
+
+    ```
+
+??? info "utils.py"
+    ```py
+    import re
+
+    from web3 import Web3
+    from eth_abi import encode
+
+
+    # Web3.toChecksumAddress() "Returns the given address with an EIP55 checksum."
+    # Web3.solidityKeccak "Returns the Keccak-256 of the given value"
+    pattern = re.compile("\((.*)\)")
+
+
+    def calc_create_address(address, nonce):
+        if nonce == 0x00:
+            data = Web3.solidityKeccak(['uint8', 'uint8', 'address', 'uint8'],
+                                    [0xd6, 0x94, address, 0x80])[12:].hex()
+        elif nonce <= 0x7f:
+            data = Web3.solidityKeccak(['uint8', 'uint8', 'address', 'uint8'],
+                                    [0xd6, 0x94, address, nonce])[12:].hex()
+        elif nonce <= 0xff:
+            data = Web3.solidityKeccak(['uint8', 'uint8', 'address', 'uint8', 'uint8'],
+                                    [0xd7, 0x94, address, 0x81, nonce])[12:].hex()
+        elif nonce <= 0xffff:
+            data = Web3.solidityKeccak(['uint8', 'uint8', 'address', 'uint8', 'uint16'],
+                                    [0xd8, 0x94, address, 0x82, nonce])[12:].hex()
+        elif nonce <= 0xffffff:
+            data = Web3.solidityKeccak(['uint8', 'uint8', 'address', 'uint8', 'uint24'],
+                                    [0xd9, 0x94, address, 0x83, nonce])[12:].hex()
+        else:
+            data = Web3.solidityKeccak(['uint8', 'uint8', 'address', 'uint8', 'uint32'],
+                                    [0xda, 0x94, address, 0x84, nonce])[12:].hex()
+        return Web3.toChecksumAddress(data)
+
+
+    def calc_create2_address(address, salt, code):
+        code_hash = Web3.solidityKeccak(['bytes'], [code])
+        data = Web3.solidityKeccak(['uint8', 'address', 'bytes32', 'bytes32'],
+                                [0xff, address, salt, code_hash])[12:].hex()
+        return Web3.toChecksumAddress(data)
+
+
+    def calc_func_selector(sig):
+        func_selector = Web3.solidityKeccak(['string'], [sig])[:4]
+        return func_selector
+
+
+    def calc_call_data(sig, *, args=[]):
+        types = pattern.findall(sig)[0].split(',')
+        func_selector: bytes = calc_func_selector(sig)
+        data: bytes = encode(types, args)
+        return func_selector + data
+
+
+    # Test
+    if __name__ == '__main__':
+        addr1 = calc_create_address('0x9Fb798AC1d3Dce899D7E0047DdA5ed4598A6911A', 0)
+        assert addr1 == '0x47d3EEA4b1d8dEA7CA26703108Ae3423817bf47E'
+
+        code = '0x6080604052348015600f57600080fd5b506706f05b59d3b200004710602c576000805460ff191660011790555b60838061' \
+            '003a6000396000f3fe6080604052348015600f57600080fd5b506004361060285760003560e01c8063890eba6814602d575b' \
+            '600080fd5b60005460399060ff1681565b604051901515815260200160405180910390f3fea2646970667358221220c0afce' \
+            '3a78fcc60fe5cb042db9c8cae10e646b3fcd2f905fa125145eebdf049864736f6c63430008110033'
+        salt = Web3.solidityKeccak(['string'], ['HGAME 2023'])
+        addr2 = calc_create2_address('0x47d3EEA4b1d8dEA7CA26703108Ae3423817bf47E', salt, code)
+        assert addr2 == '0x4321D637fF29e9ee17Fe0c1B5c9745b049d61b56'
+
+        assert calc_func_selector("setTime(uint256)").hex() == '0x3beb26c4'
+        assert calc_call_data("setTime(uint256)", args=[1]).hex() == \
+            "3beb26c40000000000000000000000000000000000000000000000000000000000000001"
+    ```
+
+## 其他
+
+- https://ethernaut.openzeppelin.com/ 入门game
+- https://capturetheether.com/challenges/ 一些合约 challenges
+- https://www.createmytoken.com/tools/ethereum-vanity-address-generator/ 生成固定前后缀地址
+- https://ropsten.etherscan.io/bytecode-decompiler 在线反编译，但是好像结果 opcode 跟部署的有点不一样
+- https://ethervm.io/decompile 在线反编译opcode
+- https://www.4byte.directory/ 找 Func Selector
 

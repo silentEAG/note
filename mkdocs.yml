@@ -47,6 +47,7 @@ plugins:
   - git-revision-date-localized:
       enable_creation_date: true
       type: datetime
+  - glightbox
   - tags:
       tags_file: tags.md
 
@@ -64,6 +65,8 @@ extra:
     property: G-0PRB4JKCNY
 
 markdown_extensions:
+  - toc:
+      permalink: true
   - admonition
   - pymdownx.details
   - pymdownx.superfences
@@ -84,12 +87,19 @@ nav:
     - Web/index.md
     - 知识点: 
       - Web/keypoint/python-proto.md
+      - Web/keypoint/Node-vm.md
     - Java安全:
       - Web/Java/SnakeYaml.md
       - Web/Java/JavaChain.md
     - Writeups:
       - Web/Writeups/RW2023-Astlibra.md
       - Web/Writeups/RW2023-TheCultOf8bit.md
+      - Web/Writeups/Idek2023-Task-Manager.md
+      - DiceCTF 2023:
+        - Web/Writeups/DiceCTF2023/DiceCTF-2023-jwtjail.md
+        - Web/Writeups/DiceCTF2023/DiceCTF-2023-impossible-xss.md
+        - Web/Writeups/DiceCTF2023/DiceCTF-2023-CSP.md
+
   - Rust:
     - Rust/index.md
     - Rust/lifetime.md
@@ -97,8 +107,11 @@ nav:
     - Blockchain/index.md
     - 知识点:
       - Blockchain/keypoint/Solidity.md
+      - Blockchain/keypoint/ethernaut.md
   - Misc:
     - Misc/index.md
+    - Misc/site.md
+    - Misc/command.md
     - 编译原理:
       - Misc/compile/LLVM-tutor.md
     - 环境搭建:

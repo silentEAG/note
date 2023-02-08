@@ -1,0 +1,68 @@
+---
+tags: 
+  - 原型链污染
+---
+
+# IdekCTF 2023 Task Manager
+
+考点：[Python 类原型链污染](../keypoint/python-proto.md)
+
+### 添加 eval global
+```python
+@app.before_first_request
+def init():
+    if app.env == 'yolo':
+        app.add_template_global(eval)
+```
+跟进源码发现需要更改 `_got_first_request` 为 False。
+```python
+if self._got_first_request:
+	return
+with self._before_request_lock:
+	if self._got_first_request:
+		return
+	for func in self.before_first_request_funcs:
+		self.ensure_sync(func)()
+	self._got_first_request = True
+```
+
+- `app.env='yolo'`
+- `app._got_first_request=[None, False]`
+- 
+### 任意渲染文件
+跟进 jinja2 渲染流程，当传入 template str name 时会在 `loaders.py#get_source` 方法中调用 `split_template_path` 获取 pieces，然后用 `posixpath.join` 拼接。
+```shell
+>>> import posixpath
+>>> posixpath.join('sakura', '../2333') 
+'sakura/../2333'
+```
+`split_template_path` 函数
+```python
+pieces = []
+for piece in template.split("/"):
+	if (
+		os.path.sep in piece # /
+		or (os.path.altsep and os.path.altsep in piece) # \\
+		or piece == os.path.pardir # ..
+	):
+		raise TemplateNotFound(template)
+	elif piece and piece != ".":
+		pieces.append(piece)
+return pieces
+```
+可以直接覆写 `os.path.pardir`，避开 `..`
+
+- `os.path.pardir=$`
+接着可以更改模板标记：
+
+- `app.jinja_env.comment_start_string = sth`
+- `app.jinja_env.comment_end_string = sth`
+找一个形如 `eval(.*)` 的文件包含就行
+但挺可惜的是 pydash 的作者在几天前更新了 Fix
+做了题，又像没有做题 :>
+
+一些其他有趣思路：
+
+- [污染exported变量控制模板的生成从而 RCE](https://github.com/Myldero/ctf-writeups/tree/master/idekCTF%202022/task%20manager)
+- `app._static_folder` 设置为 `/` 任意读文件
+- 污染 `os.path.pardir` 那里也可以做到跨目录读文件

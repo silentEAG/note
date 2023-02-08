@@ -12,7 +12,7 @@ Yaml yaml = new Yaml();
 yaml.load(payload);
 ```
 
-触发的 Source 为构造方法 `<init>` 和 `setter`。
+触发的 sink 为构造方法 `<init>` 和 `setter`。
 
 在上面的例子中，可以通过 `ScriptEngineManager` 的 `<init>` 进入 SPI 流程触发 `next()` 远程加载恶意类触发。
 
