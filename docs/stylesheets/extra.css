@@ -2,3 +2,12 @@
     --md-text-font: "mono-font", "LXGW WenKai Screen"; 
     --md-code-font: "mono-font";
 }
+
+.md-typeset a {
+    color: var(--md-default-fg-color);
+    word-break: break-word;
+}
+
+.md-typeset {
+    font-size: .7rem;
+}

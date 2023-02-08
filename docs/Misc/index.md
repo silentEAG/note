@@ -1,1 +1,5 @@
+---
+navtoc: true
+---
+
 # Misc

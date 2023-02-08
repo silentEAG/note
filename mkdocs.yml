@@ -48,6 +48,7 @@ plugins:
       enable_creation_date: true
       type: datetime
   - glightbox
+  - navtoc
   - tags:
       tags_file: tags.md
 
@@ -99,7 +100,6 @@ nav:
         - Web/Writeups/DiceCTF2023/DiceCTF-2023-jwtjail.md
         - Web/Writeups/DiceCTF2023/DiceCTF-2023-impossible-xss.md
         - Web/Writeups/DiceCTF2023/DiceCTF-2023-CSP.md
-
   - Rust:
     - Rust/index.md
     - Rust/lifetime.md
