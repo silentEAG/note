@@ -8,5 +8,4 @@
 - 社交卡片
 - 评论
 - 维护一个上游工具链
-  - 文章内目录统计 toc 插件
-- ~~自建部分资源cdn~~ (感觉部分上 cdn 不如全站上，所以摆了)
+  - 文章内目录统计 toc 插件 ([mkdocs-navtoc-plugin](https://github.com/silentEAG/mkdocs-navtoc-plugin))

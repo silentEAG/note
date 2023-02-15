@@ -80,4 +80,33 @@ comments: true
 
 `grep` 的替代，官方 [User Guide](https://github.com/BurntSushi/ripgrep/blob/master/GUIDE.md)。
 
+### Docker
 
+#### 代理
+设置 Docker Build 时的代理，在 `~/.docker/config.json` 添加：
+```json
+{
+ "proxies":
+ {
+   "default":
+   {
+     "httpProxy": "http://192.168.1.12:3128",
+     "httpsProxy": "http://192.168.1.12:3128",
+     "noProxy": "*.test.example.com,.example2.com,127.0.0.0/8"
+   }
+ }
+}
+```
+或者在 Dockerfile 里写 `ENV HTTP_PROXY="http://xxx"`，这俩方法实际的有效性我没试过，在构建 solana challenge 时直接两个都加上了hh
+
+### ufw
+```sh
+# 输出规则和 ID
+ufw status numbered
+
+```
+
+
+## 问题
+
+- 在 Ubuntu20.04 中使用 clash 做全局代理并配置了流量转发模式，此时 Docker 中的 apt 不能获取远程文件，可以使用 `docker build --network host -t [image_name]` 解决。

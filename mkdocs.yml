@@ -98,7 +98,9 @@ nav:
       - Web/Writeups/Idek2023-Task-Manager.md
       - DiceCTF 2023:
         - Web/Writeups/DiceCTF2023/DiceCTF-2023-jwtjail.md
+        - Web/Writeups/DiceCTF2023/DiceCTF-2023-chess-rs.md
         - Web/Writeups/DiceCTF2023/DiceCTF-2023-impossible-xss.md
+        - Web/Writeups/DiceCTF2023/DiceCTF-2023-jnotes.md
         - Web/Writeups/DiceCTF2023/DiceCTF-2023-CSP.md
   - Rust:
     - Rust/index.md
@@ -108,6 +110,7 @@ nav:
     - 知识点:
       - Blockchain/keypoint/Solidity.md
       - Blockchain/keypoint/ethernaut.md
+      - Blockchain/keypoint/Solana.md
   - Misc:
     - Misc/index.md
     - Misc/site.md
