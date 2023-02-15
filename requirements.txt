@@ -2,4 +2,4 @@ mkdocs-material==9.0.9
 mkdocs-git-revision-date-localized-plugin==1.1.0
 mkdocs-glightbox==0.3.1
 jieba==0.42.1
-git+https://github.com/silentEAG/mkdocs-navtoc-plugin@d541ded#egg=mkdocs-navtoc-plugin
+git+https://github.com/silentEAG/mkdocs-navtoc-plugin@057bf25#egg=mkdocs-navtoc-plugin
