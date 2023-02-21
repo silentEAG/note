@@ -6,6 +6,5 @@
 
 ## TODO
 - 社交卡片
-- 评论
 - 维护一个上游工具链
   - 文章内目录统计 toc 插件 ([mkdocs-navtoc-plugin](https://github.com/silentEAG/mkdocs-navtoc-plugin))

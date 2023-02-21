@@ -38,10 +38,13 @@ npm install pnpm -g
 
 - @solana/web3.js
 - @solana/spl-token
+- ...
 
 简单尝试了一下，感觉不如直接用 Rust 写 client 交互。
 
 ### Solana Cli
+
+官网安装预构建包
 
 ```sh
 sh -c "$(curl -sSfL https://release.solana.com/stable/install)"
@@ -118,8 +121,6 @@ Solana 的账户其作用是用来存放数据 (store state) 的，一共有三�
 
 可以看到存储程序的账户并没有保存状态，因此 Solana 的合约程序是 **无状态** 的，这是跟 solidity 很不同的一点。
 
-账户数据：
-
 |字段 | 描述 |
 | --- | --- |
 |data | 存储的数据 |
@@ -133,20 +134,28 @@ Solana 的账户其作用是用来存放数据 (store state) 的，一共有三�
 - 系统所有账户
 - 程序派生账户（PDA）
 
-通常用户直接使用的是系统所有账户，owner 是 System Program；程序账户的 owner 是 BPF Loader；PDA 是指通过程序来生成的一类地址，它的 owner 是某个程序。
+通常用户直接使用的是系统所有账户，owner 是 System Program，一个原生程序；程序账户的 owner 是 BPF Loader；PDA 是指通过程序和 seed (可有可无) 来生成的一类地址，它的 owner 是某个程序。
+
 
 ### 地址 Address
-一个账户拥有一个地址，类似于文件系统，账户对应着一个文件，那么地址便是文件的路径。通常来说，地址是一个 256 位的 ed25519 公钥，但程序派生账户的地址 (PDA) 是通过 Seed 进行生成的，不会有 Keypair 的存在。
+
+一个账户拥有一个地址，如果将账户对应文件系统中的一个文件，那么地址便是文件的路径。通常来说，地址是一个 256 位的 ed25519 公钥。其 keypair 落在椭圆曲线上。
+
+但对于 Program 来说，其 Program ID 便是它的地址，在生成的时候它也可能是一个随意的固定长度字符串，比如 `System Program` 的 ID 便是 `11111111111111111111111111111111`。
+
+这里有一个特性是所有 PDA 账户不存在公钥对应的私钥，因为其生成算法生成的密钥对不在椭圆曲线上，它的数据只能被 owner 程序所修改。
 
 ### 租金 Rent
 
-在账户中存储数据需要花费 SOL 来维持，这部分花费的 SOL 被称作租金。如果账户中的余额大于两年租金的 SOL， 这个账户就可以被豁免付租。租金可以通过关闭账户的方式来取回。
+在账户中存储数据需要花费 SOL 来维持，这部分花费的 SOL 被称作租金。如果账户中的余额大于两年租金的 SOL， 这个账户就可以被豁免付租 (Rent Exemption)。
+
+RPC 方法 [getminimumbalanceforrentexemption](https://docs.solana.com/api/http#getminimumbalanceforrentexemption) 能够计算最小的免租金额，同样可以使用 `solana rent <datasize>` 来获取。
 
 当一个账户没有足够的余额支付租金时，这个账户会被释放，数据会被清除。
 
 ### 指令 Instruction
 
-最小交互单元。
+最基本的交互单元，可以直接看 rust 中的结构体定义
 
 ```rust
 pub struct Instruction {
@@ -159,30 +168,130 @@ pub struct Instruction {
 }
 ```
 
+- 多个指令可以被打包进入同一个交易当中
+- 指令会被自动的按顺序执行
+- 如果一个指令的任何一部分失败，整个交易就会失败
 
 ### 交易 Transaction
 
 组成：
 
-- 至少一个指令 (Instruction)
-- 一组待读写的账户
-- 至少一个的 Signer
+- Signature 数组
+- Message
+
+其中 Message 是签名后的指令数组。
+
+`Transaction` 结构：
 
 ```rust
-pub fn new_signed_with_payer<T: Signers>(
-    instructions: &[Instruction],
-    payer: Option<&Pubkey>,
-    signing_keypairs: &T,
-    recent_blockhash: Hash,
-)
+pub struct Transaction {
+    /// A set of signatures of a serialized [`Message`], signed by the first
+    /// keys of the `Message`'s [`account_keys`], where the number of signatures
+    /// is equal to [`num_required_signatures`] of the `Message`'s
+    /// [`MessageHeader`].
+    ///
+    /// [`account_keys`]: Message::account_keys
+    /// [`MessageHeader`]: crate::message::MessageHeader
+    /// [`num_required_signatures`]: crate::message::MessageHeader::num_required_signatures
+    // NOTE: Serialization-related changes must be paired with the direct read at sigverify.
+    #[wasm_bindgen(skip)]
+    #[serde(with = "short_vec")]
+    pub signatures: Vec<Signature>,
+
+    /// The message to sign.
+    #[wasm_bindgen(skip)]
+    pub message: Message,
+}
+```
+
+`Message` 结构：
+
+```rust
+pub struct Message {
+    /// The message header, identifying signed and read-only `account_keys`.
+    // NOTE: Serialization-related changes must be paired with the direct read at sigverify.
+    #[wasm_bindgen(skip)]
+    pub header: MessageHeader,
+
+    /// All the account keys used by this transaction.
+    #[wasm_bindgen(skip)]
+    #[serde(with = "short_vec")]
+    pub account_keys: Vec<Pubkey>,
+
+    /// The id of a recent ledger entry.
+    pub recent_blockhash: Hash,
+
+    /// Programs that will be executed in sequence and committed in one atomic transaction if all
+    /// succeed.
+    #[wasm_bindgen(skip)]
+    #[serde(with = "short_vec")]
+    pub instructions: Vec<CompiledInstruction>,
+}
 ```
 
 一些特点：
 
-- 交易必须明确列出链上程序可以读取或写入的每个帐户，第一个账户始终是可读写并用于支付交易费用
+- 交易必须明确列出链上程序可以读取或写入的每个帐户，每个交易都需要至少有一个 `writable` 账户，用于为交易签名。这个账户无论交易成功与否都需要为交易成本付费。 如果付费者没有足够为交易付费的余额，这个交易就会被丢弃。
 - 对于每笔交易能够包含多条指令，并且在对于一些 Read-Only 的账户状态能够执行并行读操作
 - 指令是最小的可执行逻辑，一个指令 fail，整个交易 fail
 - 交易包括一个或多个数字签名，每个数字签名对应于交易引用的帐户地址。这些地址中的每一个都必须是 ed25519 密钥对的公钥，并且签名表示匹配私钥的持有者签名，因此“授权”交易。在这种情况下，该帐户称为签名者。帐户是否是签名者会作为帐户元数据的一部分传达给程序。然后程序可以使用该信息来做出授权决定。
+
+这是一个完整的客户端交易构造
+
+```rust
+let ix = Instruction {
+    program_id: flag_program::id(),
+    accounts: vec![
+        AccountMeta {
+            pubkey: account_pubkey,
+            is_signer: false,
+            is_writable: false,
+        },
+        AccountMeta {
+            pubkey: fee_payer.pubkey(),
+            is_signer: true,
+            is_writable: false,
+        },
+    ],
+    data: Vec::new(),
+};
+let blockhash = client.get_recent_blockhash().expect("get blockhash").0;
+let tx = Transaction::new_signed_with_payer(
+    &[ix],
+    Some(&fee_payer.pubkey()),
+    &[&fee_payer],
+    blockhash,
+);
+let sig = client
+    .send_and_confirm_transaction_with_spinner_and_config(
+        &tx,
+        CommitmentConfig::finalized(),
+        RpcSendTransactionConfig {
+            skip_preflight: true,
+            ..Default::default()
+        },
+    )
+    .expect("send flag tx");
+```
+
+跟进源码可以知道，首先是 `Message::new(instructions, payer)`，其中对于 keys 和 instructions 进行编译，主要有分类，去重，记录等过程。
+
+然后调用 `Transaction::sign(self, from_keypairs, recent_blockhash)` 对消息进行 ed25519 签名，需要知道的是这里并不是直接使用的 sercret key，阅读源码会发现是由其生成的 `ExpandedSecretKey`，类型是 sha512。
+
+接着是交互，先将 `Transaction` 进行序列化输出为字节数组，Solana 底层采用了 `bincode` 这个 crate 包来做这件事，然后根据不同版本来进行 base58/base64 编码，形成 `params`，与其他数据组合成 json：
+
+```rust
+json!({
+    "jsonrpc": jsonrpc, // "2.0"
+    "id": id,
+    "method": format!("{}", self), // "sendTransaction"
+    "params": params,
+})
+```
+
+然后发出 rpc 请求。
+
+目前 Solana 有两种 transaction 版本，`legacy` 和 `0`，上述过程是 `legacy`，而 `0` 相对于此增加了对于 `Address Lookup Tables` 的支持。
 
 ### 程序 Program
 
@@ -198,6 +307,22 @@ pub fn process_instruction(
 ```
 
 #### Native Program
+
+原生程序提供了运行验证节点（validator）所需的功能。比如 System Program。 这个程序负责管理建立新账户以及在两个账户之间转账SOL。
+
+??? info "原生程序表"
+    - System Program
+    - Config Program
+    - Stake Program
+    - Vote Program
+    - BPF Loader
+    - Ed25519 Program
+    - Secp256k1 Program
+
+#### SPL Program
+SPL程序定义了一系列的链上活动，其中包括针对代币的创建，交换，借贷，以及创建质押池，维护链上域名解析服务等。
+
+![202302190934307](https://cdn.silente.top/img/202302190934307.png)
 
 
 ## 入门题目
@@ -226,7 +351,7 @@ pub fn process_instruction(
     - 校验 token 账户是否有余额，并验证 token owner 的 Signer 身份
     - 输出 flag
 
-所以这题的关键是获取 secret，其实链上的数据都能被所有人看到，所以可以直接读出其数据然后调用指令控制 token 的账户。
+所以这题的关键是获取 secret。其实链上的数据都能被所有人看到，可以直接读出其数据然后调用指令控制 token 的账户。
 
 查看 solana 链上的数据有很多方法
 
@@ -253,7 +378,7 @@ solana account --url http://localhost:1024 "address"
 
 ![202302131507952](https://cdn.silente.top/img/202302131507952.png)
 
-或者直接使用浏览器查看 setup 时的传参数据：
+由于这题的 secret 是在 setup 时传入的，也可以直接使用浏览器查看 setup 时的传参数据：
 
 ![202302131512017](https://cdn.silente.top/img/202302131512017.png)
 
@@ -279,6 +404,14 @@ struct.unpack(">Q",struct.pack("<Q", 0x7654df5eab21575e))[0]
   - 创建了 bank_manager 账户，拥有 100 sol
   - 
 
+## Anchor
+
+```sh
+sudo apt-get update && sudo apt-get upgrade && sudo apt-get install -y pkg-config build-essential libudev-dev libssl-dev
+cargo install --git https://github.com/coral-xyz/anchor avm --locked --force
+avm install latest
+avm use latest
+```
 
 ## Ref
 
