@@ -109,8 +109,6 @@ solana-test-validator --bpf-program 9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin
 
 ## 概念
 
-个人感觉官方文档将每个概念给分开来解释有好有坏，比如前面的概念有些需要看到后面才能理解，但是我也不知道怎么更好地组织他们，所以还是按照文档的概念顺序来说明。
-
 ### 账户 Account
 
 Solana 的账户其作用是用来存放数据 (store state) 的，一共有三类账户：
@@ -119,7 +117,30 @@ Solana 的账户其作用是用来存放数据 (store state) 的，一共有三�
 - Program Account，用来存储可执行程序
 - Native Account，用来存储原生程序，如果把 Solana 比作 Linux 系统，那么这就像是[系统内核](#native-program)，提供一些基本的方法接口
 
-可以看到存储程序的账户并没有保存状态，因此 Solana 的合约程序是 **无状态** 的，这是跟 solidity 很不同的一点。
+在 Data Account 中又有两类：
+
+- 系统所有账户
+- 程序派生账户（PDA）
+
+![](https://solanacookbook.com/assets/account-matrix.11f1f839.png)
+
+```rust
+/// An Account with data that is stored on chain
+#[repr(C)]
+pub struct Account {
+    /// lamports in the account
+    pub lamports: u64,
+    /// data held in this account
+    #[serde(with = "serde_bytes")]
+    pub data: Vec<u8>,
+    /// the program that owns this account. If executable, the program that loads this account.
+    pub owner: Pubkey,
+    /// this account's data contains a loaded program (and is now read-only)
+    pub executable: bool,
+    /// the epoch at which this account will next owe rent
+    pub rent_epoch: Epoch,
+}
+```
 
 |字段 | 描述 |
 | --- | --- |
@@ -129,10 +150,7 @@ Solana 的账户其作用是用来存放数据 (store state) 的，一共有三�
 |owner | 账户所有者 |
 |rentEpoch | 下一个需要付租金的 epoch，为 0 即表示免租金 |
 
-在 Data Account 中又有两类：
-
-- 系统所有账户
-- 程序派生账户（PDA）
+可以看到存储程序的账户并没有保存状态，因此 Solana 的合约程序是 **无状态** 的，这是跟 solidity 很不同的一点。如果想对于一个合约程序进行状态的存储，那么可以使用派生账户（PDA），即用一个程序和 seed 来生成一个地址，该程序便是这个账户的 owner，用 rust 写那就是 `Pubkey::from_program_address(&[], program_id)`。
 
 通常用户直接使用的是系统所有账户，owner 是 System Program，一个原生程序；程序账户的 owner 是 BPF Loader；PDA 是指通过程序和 seed (可有可无) 来生成的一类地址，它的 owner 是某个程序。
 
@@ -235,6 +253,13 @@ pub struct Message {
 - 对于每笔交易能够包含多条指令，并且在对于一些 Read-Only 的账户状态能够执行并行读操作
 - 指令是最小的可执行逻辑，一个指令 fail，整个交易 fail
 - 交易包括一个或多个数字签名，每个数字签名对应于交易引用的帐户地址。这些地址中的每一个都必须是 ed25519 密钥对的公钥，并且签名表示匹配私钥的持有者签名，因此“授权”交易。在这种情况下，该帐户称为签名者。帐户是否是签名者会作为帐户元数据的一部分传达给程序。然后程序可以使用该信息来做出授权决定。
+- 交易费用目前仅取决于交易中包含的签名数量：
+```sh
+> solana fees
+Blockhash: 2t4n4HzWgWMQPFbDw6N3XcK7wNrLsU9y6Thv8byDdqbC
+Lamports per signature: 5000
+Last valid block height: 188171901
+```
 
 这是一个完整的客户端交易构造
 
@@ -293,6 +318,10 @@ json!({
 
 目前 Solana 有两种 transaction 版本，`legacy` 和 `0`，上述过程是 `legacy`，而 `0` 相对于此增加了对于 `Address Lookup Tables` 的支持。
 
+### 地址查找表 Address Lookup Tables
+
+在一笔交易中，账户地址列表最多只能为 32 个。为了解决容纳更多地址参与一次交易，Solana 引入了地址查找表（Address Lookup Tables）的概念，这个概念是在 Solana v1.7 引入的，能够在一次交易中容纳 256 个账户地址。
+
 ### 程序 Program
 
 Solana 中的程序便是 Solidity 中的智能合约，不同之处在于其是**无状态**的，所有的和程序交互的数据都是存储在独立的账户中，通过指令传入程序。
@@ -324,6 +353,181 @@ SPL程序定义了一系列的链上活动，其中包括针对代币的创建�
 
 ![202302190934307](https://cdn.silente.top/img/202302190934307.png)
 
+## 漏洞点
+
+### 缺少 owner 检查
+
+```rust
+fn withdraw_token_restricted(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) -> ProgramResult {
+    let account_iter = &mut accounts.iter();
+    let vault = next_account_info(account_iter)?;
+    let admin = next_account_info(account_iter)?;
+    let config = ConfigAccount::unpack(next_account_info(account_iter)?)?;
+    let vault_authority = next_account_info(account_iter)?;
+    
+    
+    if config.admin != admin.pubkey() {
+        return Err(ProgramError::InvalidAdminAccount);
+    }
+    
+    // ...
+    // Transfer funds from vault to admin using vault_authority
+    // ...
+    
+    Ok(())
+}
+```
+在上述代码中，检查了 admin 是否是 config 中的 admin，但是没有检查 config 的 owner 是否是期望目标，所以完全可以由我们自己构造一个 config 账户，然后将其 admin 设置为 admin，这样就可以 bypass 了。
+
+Fix:
+```rust
+if config.owner != program_id {
+    return Err(ProgramError::InvalidConfigAccount);
+}
+```
+
+### 缺少 Signer 检查
+
+```rust
+fn update_admin(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
+    let account_iter = &mut accounts.iter();
+    let config = ConfigAccount::unpack(next_account_info(account_iter)?)?;
+    let admin = next_account_info(account_iter)?;
+    let new_admin = next_account_info(account_iter)?;
+
+    // ...
+    // Validate the config account...
+    // ...
+    
+    if admin.pubkey() != config.admin {
+        return Err(ProgramError::InvalidAdminAccount);
+    }
+    
+    config.admin = new_admin.pubkey();
+    
+    Ok(())
+}
+```
+
+例子中虽然验证了 config 账户的合法性，但是没有验证 admin 是否是签名者，所以可以直接调用 admin 的 pubkey 来更新 admin。
+
+Fix:
+
+```rust
+if !admin.is_signer {
+    return Err(ProgramError::MissingSigner);
+}
+```
+
+### 整型上溢 & 下溢
+
+同 solidity，就不展开说了。
+
+### 任意程序调用
+
+```rust
+pub fn process_withdraw(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) -> ProgramResult {
+    let account_info_iter = &mut accounts.iter();
+    let vault = next_account_info(account_info_iter)?;
+    let vault_authority = next_account_info(account_info_iter)?;
+    let destination = next_account_info(account_info_iter)?;
+    let token_program = next_account_info(account_info_iter)?;
+
+    // ...
+    // get signer seeds, validate account owners and signers, 
+    // and verify that the user can withdraw the supplied amount
+    // ...
+
+    // invoke unverified token_program
+    invoke_signed(
+        &spl_token::instruction::transfer(
+            &token_program.key,
+            &vault.key,
+            &destination.key,
+            &vault_authority.key,
+            &[&vault_authority.key],
+            amount,
+        )?,
+        &[
+            vault.clone(),
+            destination.clone(),
+            vault_owner_info.clone(),
+            token_program.clone(),
+        ],
+        &[&seeds],
+    )?;
+    Ok(())
+}
+```
+
+在程序中没有对 token_program 进行验证，所以我们可以构造一个恶意的 token_program，然后覆写其 transfer 指令。
+
+但其实对于 spl-token 等之类的 System Program 或 SPL 程序来说，21年后已经不存在了，因为在其更改中，在程序内部又使用 `check_program_account` 对程序的 Pubkey 进行了验证。
+
+![202303032309936](https://cdn.silente.top/img/202303032309936.png)
+
+不过对于其他一些链上用户程序来说，不妨是一种思路。
+
+### 账户数据混乱
+
+```rust
+// ------- Account Types -------- 
+pub struct Config {
+    pub admin: Pubkey,
+    pub fee: u32,
+    pub user_count: u32,
+}
+
+pub struct User {
+    pub user_authority: Pubkey,
+    pub balance: u64,
+}
+
+// ------- Helper functions --------
+fn unpack_config(account: &AccountInfo) -> Result<Config, ProgramError> {
+    let mut config: Config = deserialize(&mut account.data.borrow())?;
+
+    return config;
+}
+
+
+// ------- Contract Instructions ---------
+fn create_user(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
+    let account_iter = &mut accounts.iter();
+    let user = next_account_info(account_iter)?;    
+   
+    // ...
+    // Initialize a User struct, set user_authority 
+    // to user and set balance to 0
+    // ...
+    
+    Ok(())
+}
+
+fn withdraw_tokens(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) -> ProgramResult {
+    let account_iter = &mut accounts.iter();
+    let vault = next_account_info(account_iter)?;
+    let admin = next_account_info(account_iter)?;
+    let config = unpack_config(next_account_info(account_iter)?)?;
+    let vault_authority = next_account_info(account_iter)?;
+    
+    if config.owner != program_id {
+        return Err(ProgramError::InvalidConfigAccount);
+    }
+    
+    if config.admin != admin.pubkey() {
+        return Err(ProgramError::InvalidAdminAccount);
+    }
+    
+    // ...
+    // Transfer funds from vault to admin using vault_authority
+    // ...
+    
+    Ok(())
+}
+```
+
+对于每个指令，传入的 accounts 是完全可控的，比如上述代码中的 `create_user` ，其实也可以传入一个 `Config` 的 account，那么操作的便是相对应的数据，设置 user 的 user_authority, 实际是在设置 config 的 admin。其他数据类似。但需要查明一些具体类型的内存布局。
 
 ## 入门题目
 
@@ -382,7 +586,7 @@ solana account --url http://localhost:1024 "address"
 
 ![202302131512017](https://cdn.silente.top/img/202302131512017.png)
 
-后一个知识点就是数据的 pack/unpack。在 Rust 中对数据进行了序列化处理，由于 secret 是 u64，所以单看这一个数据类型来说，Solana 是按小字节序按字节存储，所以读取也需要这样来，这里可以使用 Python [struct](https://blog.csdn.net/qdPython/article/details/115550281) 包来帮助我们操作：
+后一个知识点就是数据的 pack/unpack。在 Rust 中对数据进行了序列化处理，由于 secret 是 u64，所以单看这一个数据类型来说，Solana 是按小端序存储，所以读取也需要这样来，这里可以使用 Python [struct](https://blog.csdn.net/qdPython/article/details/115550281) 包来帮助我们操作：
 
 ```python
 import struct
@@ -396,25 +600,101 @@ struct.unpack(">Q",struct.pack("<Q", 0x7654df5eab21575e))[0]
 
 ### allesctf2021 legit-bank
 
+类似于上题，相同的初始化过程：
 - **`initialize_ledger`**
   - 创建了一个 Flag Mint 账户存储 token 信息，合计有 16 个
   - 创建了一个 token account， holder 是 `flag_depot`，token 有 16 个
   - 创建了 flag 原生程序账户，名字是 `flagloader_program`
   - 创建了 bank 程序账户，同时写入了字节码数据
   - 创建了 bank_manager 账户，拥有 100 sol
-  - 
 
-## Anchor
+然后可以看题目 program，可以看到有如下几个指令：
+```rust
+/// Instructions that this program supports
+#[derive(Debug, BorshDeserialize, BorshSerialize)]
+pub enum BankInstruction {
+    /// Initialize the bank
+    Initialize { reserve_rate: u8 },
 
-```sh
-sudo apt-get update && sudo apt-get upgrade && sudo apt-get install -y pkg-config build-essential libudev-dev libssl-dev
-cargo install --git https://github.com/coral-xyz/anchor avm --locked --force
-avm install latest
-avm use latest
+    /// Open a new user account with the bank
+    Open,
+
+    /// Transfer money into bank account
+    Deposit { amount: u64 },
+
+    /// Withdraw money from bank account
+    Withdraw { amount: u64 },
+
+    /// (Manager only) take money for investing
+    Invest { amount: u64 },
+}
 ```
 
-## Ref
+题目的突破点在于 `invest` 函数：
 
-- docs.solana.com
-- solanacookbook.com
-- beta.solpg.io
+```rust
+fn invest(_program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) -> ProgramResult {
+    let [bank_info, vault_info, vault_authority_info, dest_token_account_info, manager_info, _spl_token_program] =
+        array_ref![accounts, 0, 6];
+    // verify that manager has approved
+    if !manager_info.is_signer {
+        return Err(ProgramError::MissingRequiredSignature);
+    }
+
+    // verify that manager is correct
+    let bank: Bank = Bank::try_from_slice(&bank_info.data.borrow())?;
+    if bank.manager_key != manager_info.key.to_bytes() {
+        return Err(0xbeefbeef.into());
+    }
+
+    // verify that the vault is correct
+    if vault_info.key.as_ref() != &bank.vault_key {
+        return Err(ProgramError::InvalidArgument);
+    }
+
+    // verify that enough money is left in reserve
+    let vault = spl_token::state::Account::unpack(&vault_info.data.borrow())?;
+    if (vault.amount - amount) * 100 < bank.total_deposit * u64::from(bank.reserve_rate) {
+        return Err(0xfeedf00d.into());
+    }
+
+    // transfer tokens to manager
+    invoke_signed(
+        &spl_token::instruction::transfer(
+            &spl_token::ID,
+            &vault_info.key,
+            &dest_token_account_info.key,
+            &vault_authority_info.key,
+            &[],
+            amount,
+        )?,
+        &[
+            vault_info.clone(),
+            dest_token_account_info.clone(),
+            vault_authority_info.clone(),
+        ],
+        &[&[vault_info.key.as_ref(), &[bank.vault_authority_seed]]],
+    )?;
+
+    Ok(())
+}
+```
+其中校验了 `bank.manager_key == manager_info.key`，但就像前面所说的 **任意程序调用** ，程序中并没有对 bank 进行校验，那么我们便可以构造一个恶意的 bank 程序，其中 `manager_key` 设置为我们的地址，然后调用 invest 即可。 
+
+Solana 的交互感觉有点难写，可以使用 [solana-poc-framework](https://github.com/neodyme-labs/solana-poc-framework) 这个 crate 包来帮助我们构造交互。
+
+出题人的[代码](https://github.com/neodyme-labs/solana-ctf/tree/master/allesctf21/legit-bank/solution/author)已经很优雅了，这里就不贴了 :P
+
+主要流程便是用链上的 bank 信息，替换我们的 `manager_key`，然后再将这账户数据上链，最后调用 invest 即可。
+
+![202303032343276](https://cdn.silente.top/img/202303032343276.png)
+
+## Ref & Tools
+
+- [官方文档 - 全而杂](https://docs.solana.com)
+- [cookbook - 简单明显的概念总结](https://solanacookbook.com)
+- [在线编译 - 体验一下](https://beta.solpg.io)
+- [常见漏洞点 - 博客的其他文章也挺好的](https://blog.neodyme.io/posts/solana_common_pitfalls/)
+- [浏览器 - 支持 Custom RPC](https://explorer.solana.com/)
+- [Solana CTF Challenges](https://github.com/neodyme-labs/solana-ctf)
+- [poc-framework](https://github.com/neodyme-labs/solana-poc-framework)

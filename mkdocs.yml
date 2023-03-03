@@ -104,13 +104,18 @@ nav:
         - Web/Writeups/DiceCTF2023/DiceCTF-2023-CSP.md
   - Rust:
     - Rust/index.md
+    - Atomics:
+      - Rust/Atomics/index.md
     - Rust/lifetime.md
   - Blockchain:
     - Blockchain/index.md
     - 知识点:
       - Blockchain/keypoint/Solidity.md
       - Blockchain/keypoint/ethernaut.md
-      - Blockchain/keypoint/Solana.md
+      - Solana:
+        - Blockchain/keypoint/Solana/index.md
+        - Blockchain/keypoint/Solana/Solana.md
+        - Blockchain/keypoint/Solana/Solana-2.md
   - Misc:
     - Misc/index.md
     - Misc/site.md
