@@ -353,9 +353,9 @@ SPL程序定义了一系列的链上活动，其中包括针对代币的创建�
 
 ![202302190934307](https://cdn.silente.top/img/202302190934307.png)
 
-## 漏洞点
+## 常见漏洞点
 
-### 缺少 owner 检查
+### Missing ownership check
 
 ```rust
 fn withdraw_token_restricted(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) -> ProgramResult {
@@ -386,7 +386,7 @@ if config.owner != program_id {
 }
 ```
 
-### 缺少 Signer 检查
+### Missing signer check
 
 ```rust
 fn update_admin(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
@@ -419,11 +419,11 @@ if !admin.is_signer {
 }
 ```
 
-### 整型上溢 & 下溢
+### Integer overflow & underflow
 
 同 solidity，就不展开说了。
 
-### 任意程序调用
+### Arbitrary signed program invocation
 
 ```rust
 pub fn process_withdraw(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) -> ProgramResult {
@@ -468,7 +468,9 @@ pub fn process_withdraw(program_id: &Pubkey, accounts: &[AccountInfo], amount: u
 
 不过对于其他一些链上用户程序来说，不妨是一种思路。
 
-### 账户数据混乱
+Fix: 添加程序ID验证
+
+### Type cosplay
 
 ```rust
 // ------- Account Types -------- 
@@ -527,7 +529,32 @@ fn withdraw_tokens(program_id: &Pubkey, accounts: &[AccountInfo], amount: u64) -
 }
 ```
 
-对于每个指令，传入的 accounts 是完全可控的，比如上述代码中的 `create_user` ，其实也可以传入一个 `Config` 的 account，那么操作的便是相对应的数据，设置 user 的 user_authority, 实际是在设置 config 的 admin。其他数据类似。但需要查明一些具体类型的内存布局。
+对于每个指令，传入的 accounts 是完全可控的，比如上述代码中的 `create_user` ，其实也可以传入一个 `Config` 的 account，那么操作的便是相对应的数据，设置 user 的 user_authority, 实际是在设置 config 的 admin。其他数据类似。但实际利用需要查明一些具体类型的结构布局。
+
+Fix: 添加一个 enum，用来区分不同的账户类型。
+
+### Seed collisions
+
+```rust
+let result = (Pubkey::from_str("BriX1Bv33M2s9xKRzBftvtK1HL5QEhU1Aaixg6NemP8v").unwrap(), 255);
+assert_eq!(result, Pubkey::find_program_address(&["se".as_bytes(), "abc".as_bytes()], &system_program::id()));
+assert_eq!(result, Pubkey::find_program_address(&["seabc".as_bytes()], &system_program::id()));
+```
+
+在 `create_program_address` 的函数文档中说的很清楚：
+```
+/// Warning: Because of the way the seeds are hashed there is a potential
+/// for program address collisions for the same program id.  The seeds are
+/// hashed sequentially which means that seeds {"abcdef"}, {"abc", "def"},
+/// and {"ab", "cd", "ef"} will all result in the same program address given
+/// the same program id.  Since the change of collision is local to a given
+/// program id the developer of that program must take care to choose seeds
+/// that do not collide with themselves.
+```
+
+N1CTF 2022 - Utility Payment Service 便是这个考点。
+- [赵哥](http://retr0.vip/archives/73/)
+- [TonyCrane](https://note.tonycrane.cc/writeups/n1ctf2022/)
 
 ## 入门题目
 
@@ -601,12 +628,12 @@ struct.unpack(">Q",struct.pack("<Q", 0x7654df5eab21575e))[0]
 ### allesctf2021 legit-bank
 
 类似于上题，相同的初始化过程：
-- **`initialize_ledger`**
-  - 创建了一个 Flag Mint 账户存储 token 信息，合计有 16 个
-  - 创建了一个 token account， holder 是 `flag_depot`，token 有 16 个
-  - 创建了 flag 原生程序账户，名字是 `flagloader_program`
-  - 创建了 bank 程序账户，同时写入了字节码数据
-  - 创建了 bank_manager 账户，拥有 100 sol
+
+- 创建了一个 Flag Mint 账户存储 token 信息，合计有 16 个
+- 创建了一个 token account， holder 是 `flag_depot`，token 有 16 个
+- 创建了 flag 原生程序账户，名字是 `flagloader_program`
+- 创建了 bank 程序账户，同时写入了字节码数据
+- 创建了 bank_manager 账户，拥有 100 sol
 
 然后可以看题目 program，可以看到有如下几个指令：
 ```rust
@@ -691,8 +718,10 @@ Solana 的交互感觉有点难写，可以使用 [solana-poc-framework](https:/
 
 ## Ref & Tools
 
+- [Soldev - 全方面收集 solana 的各种资源](https://soldev.app/)
 - [官方文档 - 全而杂](https://docs.solana.com)
 - [cookbook - 简单明显的概念总结](https://solanacookbook.com)
+- [anchor 的 solana 文档 - 也写的挺好的](https://www.anchor-lang.com/docs/intro-to-solana)
 - [在线编译 - 体验一下](https://beta.solpg.io)
 - [常见漏洞点 - 博客的其他文章也挺好的](https://blog.neodyme.io/posts/solana_common_pitfalls/)
 - [浏览器 - 支持 Custom RPC](https://explorer.solana.com/)
