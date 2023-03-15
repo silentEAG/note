@@ -6,5 +6,6 @@
 
 ## TODO
 - 社交卡片
-- 维护一个上游工具链
+- 维护一个上游工具链 ([note-toolchain](https://github.com/silentEAG/note-toolchain))
   - 文章内目录统计 toc 插件 ([mkdocs-navtoc-plugin](https://github.com/silentEAG/mkdocs-navtoc-plugin))
+  - Changelog 插件 ([mkdocs-changelog-plugin](https://github.com/silentEAG/mkdocs-changelog-plugin))

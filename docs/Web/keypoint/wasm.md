@@ -1,4 +1,9 @@
-# WASM
+---
+tags:
+  - TODO
+---
+
+# WASM with Rust
 
 ## 概念
 
@@ -16,3 +21,11 @@ https://evian-zhang.github.io/wasm-tutorial
 
 
 ## 例题
+
+- [DiceCTF 2023 chess.rs](../Writeups/DiceCTF2023/DiceCTF-2023-chess-rs.md)
+
+## Docs & Tools
+- [WebAssembly - mdn](https://developer.mozilla.org/zh-CN/docs/WebAssembly)
+- [wasm-pack - 工具包](https://rustwasm.github.io/wasm-pack/)
+- [wasm-bindgen - Rust 的绑定](https://github.com/rustwasm/wasm-bindgen)
+- 

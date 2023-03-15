@@ -145,7 +145,7 @@ wasm 中有个 `game` 结构体，查看其标注可以知道它与 `start` 字�
 
 wasm 的内存是由 js 的 `ArrayBuffer` 管理，但其具体的分配还是由源语言来决定，对于 Rust 来说，`wasm-bindgen` 导出了 [`__wbindgen_malloc`](https://github.com/rustwasm/wasm-bindgen/blob/76e4cad8bb0dadc27b532bc051817ecf9bc3ac7a/src/lib.rs#L1561)，其内部实现是用的标准库中的 `alloc`。
 
-> Why do these values work? I didn't want to trace heap allocations, so... ¯\(ツ)/¯
+> Why do these values work? I didn't want to trace heap allocations, so... ¯\\(ツ)/¯
 
 由于目前缺少对于 wasm 的直接调试，所以感觉只有 fuzz 比较有效，通过不断调试，能够拿到 id 的前 14 位:
 
@@ -284,3 +284,10 @@ e.source.postMessage({ id: "SilentE", type: "init"}, "*");
     </body>
 </html>
 ```
+
+## Ref
+
+- https://github.com/dicegang/dicectf-2023-challenges/tree/main/pwn/chessrs
+- https://rgwv.team/writeups/1838/chessrs/
+- https://brycec.me/posts/dicectf_2023_challenges#chessrs
+- https://w0y.at/writeup/2023/02/05/dicectf-2023-chessrs.html

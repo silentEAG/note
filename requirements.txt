@@ -3,3 +3,4 @@ mkdocs-git-revision-date-localized-plugin==1.1.0
 mkdocs-glightbox==0.3.1
 jieba==0.42.1
 git+https://github.com/silentEAG/mkdocs-navtoc-plugin@d6d6fa5#egg=mkdocs-navtoc-plugin
+git+https://github.com/silentEAG/mkdocs-changelog-plugin@4710d4b#egg=mkdocs-changelog-plugin

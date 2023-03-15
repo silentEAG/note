@@ -49,6 +49,7 @@ plugins:
       type: datetime
   - glightbox
   - navtoc
+  - changelog
   - tags:
       tags_file: tags.md
 
@@ -108,6 +109,7 @@ nav:
     - Atomics:
       - Rust/Atomics/index.md
     - Rust/lifetime.md
+    - Rust/issue25860.md
   - Blockchain:
     - Blockchain/index.md
     - 知识点:
@@ -123,6 +125,8 @@ nav:
     - Misc/command.md
     - 编译原理:
       - Misc/compile/LLVM-tutor.md
+    - OS:
+      - Misc/OS/starter.md
     - 环境搭建:
       - Misc/environ/Yubikey.md
       - Misc/environ/WSLconfig.md
