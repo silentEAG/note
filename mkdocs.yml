@@ -89,6 +89,7 @@ nav:
     - 知识点: 
       - Web/keypoint/python-proto.md
       - Web/keypoint/Node-vm.md
+      - Web/keypoint/wasm.md
     - Java安全:
       - Web/Java/SnakeYaml.md
       - Web/Java/JavaChain.md
