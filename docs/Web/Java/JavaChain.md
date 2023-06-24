@@ -168,3 +168,8 @@
         return so;
     }
     ```
+
+
+### 一些工具
+
+- https://github.com/WhiteHSBG/JNDIExploit

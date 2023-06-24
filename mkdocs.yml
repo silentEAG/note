@@ -94,6 +94,9 @@ nav:
     - Java安全:
       - Web/Java/SnakeYaml.md
       - Web/Java/JavaChain.md
+    - 渗透:
+      - Web/Pentest/index.md
+      - Web/Pentest/tool.md
     - Writeups:
       - Web/Writeups/RW2023-Astlibra.md
       - Web/Writeups/RW2023-TheCultOf8bit.md
@@ -104,17 +107,19 @@ nav:
         - Web/Writeups/DiceCTF2023/DiceCTF-2023-impossible-xss.md
         - Web/Writeups/DiceCTF2023/DiceCTF-2023-jnotes.md
         - Web/Writeups/DiceCTF2023/DiceCTF-2023-CSP.md
+      - Web/Writeups/AliCTF2023.md
   - Rust:
     - Rust/index.md
     - Atomics:
       - Rust/Atomics/index.md
     - Rust/lifetime.md
-    - Rust/issue25860.md
   - Blockchain:
     - Blockchain/index.md
     - 知识点:
-      - Blockchain/keypoint/Solidity.md
       - Blockchain/keypoint/ethernaut.md
+      - Solidity:
+        - Blockchain/keypoint/Solidity/index.md
+        - Blockchain/keypoint/Solidity/Solidity.md
       - Solana:
         - Blockchain/keypoint/Solana/index.md
         - Blockchain/keypoint/Solana/Solana.md
@@ -125,9 +130,10 @@ nav:
     - Misc/command.md
     - 编译原理:
       - Misc/compile/LLVM-tutor.md
-    - OS:
+    - OS & IOT:
       - Misc/OS/starter.md
-    - 环境搭建:
+      - Misc/OS/iot.md
+    - 杂项:
       - Misc/environ/Yubikey.md
       - Misc/environ/WSLconfig.md
       

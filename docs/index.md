@@ -1,6 +1,3 @@
----
-changelog: true
----
 
 # Hi~
 

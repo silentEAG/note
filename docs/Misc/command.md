@@ -99,14 +99,8 @@ comments: true
 ```
 或者在 Dockerfile 里写 `ENV HTTP_PROXY="http://xxx"`，这俩方法实际的有效性我没试过，在构建 solana challenge 时直接两个都加上了hh
 
-### ufw
-```sh
-# 输出规则和 ID
-ufw status numbered
+### gdb
 
-```
-
-
-## 问题
-
-- 在 Ubuntu20.04 中使用 clash 做全局代理并配置了流量转发模式，此时 Docker 中的 apt 不能获取远程文件，可以使用 `docker build --network host -t [image_name]` 解决。
+- [100 gdb tips](https://github.com/hellogcc/100-gdb-tips)
+- [GDB在线手册](https://sourceware.org/gdb/onlinedocs/gdb)
+- [GDB命令卡片](https://github.com/hellogcc/100-gdb-tips/blob/master/refcard.pdf)

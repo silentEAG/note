@@ -565,15 +565,17 @@ idx 2309889839212284910379004245778737706504599740558682499191559115052141390416
 
 
     def calc_func_selector(sig):
-        func_selector = Web3.solidityKeccak(['string'], [sig])[:4]
+        func_selector: bytes = Web3.solidityKeccak(['string'], [sig])[:4]
         return func_selector
 
 
     def calc_call_data(sig, *, args=[]):
         types = pattern.findall(sig)[0].split(',')
+        if types == ['']:
+            types = []
         func_selector: bytes = calc_func_selector(sig)
         data: bytes = encode(types, args)
-        return func_selector + data
+        return "0x" + (func_selector + data).hex()
 
 
     # Test
@@ -590,8 +592,10 @@ idx 2309889839212284910379004245778737706504599740558682499191559115052141390416
         assert addr2 == '0x4321D637fF29e9ee17Fe0c1B5c9745b049d61b56'
 
         assert calc_func_selector("setTime(uint256)").hex() == '0x3beb26c4'
-        assert calc_call_data("setTime(uint256)", args=[1]).hex() == \
-            "3beb26c40000000000000000000000000000000000000000000000000000000000000001"
+        assert calc_call_data("setTime(uint256)", args=[1]) == \
+            "0x3beb26c40000000000000000000000000000000000000000000000000000000000000001"
+
+        assert calc_call_data("poc()") == "0x2cce6b01"
     ```
 
 ## 其他
