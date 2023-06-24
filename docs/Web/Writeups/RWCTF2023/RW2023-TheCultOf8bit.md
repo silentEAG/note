@@ -6,6 +6,8 @@ tags:
 Date: 2023/1/10
 ---
 
+# The Cult of 8bit
+
 这题的步骤挺复杂的hh
 
 题目环境的 flag 是在 admin 账号的唯一一篇 post 中，但限制了 admin 账号新建 post 和 todo 功能，并且设置了 session 是 httponly，并不能使用 js 直接脚本获取。由于对于 `/post/:id` 没有任何鉴权和 csrf 防御，唯一的想法便是获取 flag 那篇 post 的 uuid。

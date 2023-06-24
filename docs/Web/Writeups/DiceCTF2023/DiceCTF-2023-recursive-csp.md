@@ -1,14 +1,9 @@
 ---
 tags: 
   - CSP
-  - TODO
 ---
 
-# CSP
-
-把两道 CSP 相关的题放在一起。
-
-## recursive csp
+# recursive csp
 
 题目源码
 ```html
@@ -58,9 +53,3 @@ fn main() {
     });
 }
 ```
-
-## codebox
-
-一个 trick + CSP 属性的利用。
-
-TODO

@@ -83,36 +83,45 @@ markdown_extensions:
 
 
 nav:
+
   - Home:
     - index.md
+    - tags.md
+    - update.md
+
   - Web:
     - Web/index.md
     - 知识点: 
       - Web/keypoint/python-proto.md
       - Web/keypoint/Node-vm.md
       - Web/keypoint/wasm.md
-    - Java安全:
-      - Web/Java/SnakeYaml.md
+    - Java 安全:
       - Web/Java/JavaChain.md
-    - 渗透:
+      - Web/Java/SnakeYaml.md
+      - Web/Java/HessianWays.md
+    - 渗透相关:
       - Web/Pentest/index.md
       - Web/Pentest/tool.md
     - Writeups:
-      - Web/Writeups/RW2023-Astlibra.md
-      - Web/Writeups/RW2023-TheCultOf8bit.md
-      - Web/Writeups/Idek2023-Task-Manager.md
+      - Web/Writeups/Idek2023.md
+      - RWCTF 2023:
+        - Web/Writeups/RWCTF2023/RW2023-Astlibra.md
+        - Web/Writeups/RWCTF2023/RW2023-TheCultOf8bit.md
       - DiceCTF 2023:
         - Web/Writeups/DiceCTF2023/DiceCTF-2023-jwtjail.md
         - Web/Writeups/DiceCTF2023/DiceCTF-2023-chess-rs.md
         - Web/Writeups/DiceCTF2023/DiceCTF-2023-impossible-xss.md
         - Web/Writeups/DiceCTF2023/DiceCTF-2023-jnotes.md
-        - Web/Writeups/DiceCTF2023/DiceCTF-2023-CSP.md
+        - Web/Writeups/DiceCTF2023/DiceCTF-2023-recursive-csp.md
       - Web/Writeups/AliCTF2023.md
+      - Web/Writeups/SCTF2023.md
+
   - Rust:
     - Rust/index.md
     - Atomics:
       - Rust/Atomics/index.md
     - Rust/lifetime.md
+
   - Blockchain:
     - Blockchain/index.md
     - 知识点:
@@ -124,15 +133,14 @@ nav:
         - Blockchain/keypoint/Solana/index.md
         - Blockchain/keypoint/Solana/Solana.md
         - Blockchain/keypoint/Solana/Solana-2.md
+
   - Misc:
     - Misc/index.md
-    - Misc/site.md
     - Misc/command.md
     - 编译原理:
       - Misc/compile/LLVM-tutor.md
-    - OS & IOT:
-      - Misc/OS/starter.md
-      - Misc/OS/iot.md
+    - IOT:
+      - Misc/IOT/starter.md
     - 杂项:
       - Misc/environ/Yubikey.md
       - Misc/environ/WSLconfig.md

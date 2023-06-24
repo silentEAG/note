@@ -1,4 +1,11 @@
+---
+tags: 
+  - Java 反序列化
+---
 
+# AliCTF 2023
+
+两个 java 题就放一起了。
 
 ## ezbean
 
@@ -83,7 +90,7 @@ public static void case3(String jndi) throws Exception {
 - y4 师傅两篇文章: [1](https://y4tacker.github.io/2023/03/20/year/2023/3/FastJson%E4%B8%8E%E5%8E%9F%E7%94%9F%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96), [2](https://y4tacker.github.io/2023/04/26/year/2023/4/FastJson%E4%B8%8E%E5%8E%9F%E7%94%9F%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96-%E4%BA%8C/)
 - 序列化/反序列化流程分析： [1](https://www.cnpanda.net/sec/893.html), [2](https://www.cnpanda.net/sec/928.html)
 
-## bypass
+## bypassit1
 
 只 ban 了一个 get 方法，Templates 其他方法也能弹，这里学到了一个 toString2Getter 的新类：POJONode，原生存在于 springboot 中。
 
