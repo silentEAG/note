@@ -605,5 +605,6 @@ idx 2309889839212284910379004245778737706504599740558682499191559115052141390416
 - https://www.createmytoken.com/tools/ethereum-vanity-address-generator/ 生成固定前后缀地址
 - https://ropsten.etherscan.io/bytecode-decompiler 在线反编译，但是好像结果 opcode 跟部署的有点不一样
 - https://ethervm.io/decompile 在线反编译opcode
+- https://library.dedaub.com/decompile 又一个反编译，不过效果挺不错的
 - https://www.4byte.directory/ 找 Func Selector
 
