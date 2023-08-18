@@ -115,6 +115,7 @@ nav:
         - Web/Writeups/DiceCTF2023/DiceCTF-2023-recursive-csp.md
       - Web/Writeups/AliCTF2023.md
       - Web/Writeups/SCTF2023.md
+      - Web/Writeups/CoRCTF2023.md
 
   - Rust:
     - Rust/index.md

