@@ -4,6 +4,9 @@ hide_comments: true
 
 # 更新记录
 
+??? info "2023/9/30"
+    - 更新 [红日靶场1 Walkthrough](./Web/Pentest/Walkthrough/hongri1.md)
+
 ??? info "2023/8/24"
     - 更新 [CORCTF2023](./Web/Writeups/CoRCTF2023.md) Leakynote
 

@@ -101,7 +101,9 @@ nav:
       - Web/Java/HessianWays.md
     - 渗透相关:
       - Web/Pentest/index.md
-      - Web/Pentest/tool.md
+      - 靶场:
+        - Web/Pentest/Walkthrough/hongri1.md
+      - Web/Pentest/note.md
     - Writeups:
       - Web/Writeups/Idek2023.md
       - RWCTF 2023:
