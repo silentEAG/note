@@ -8,19 +8,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Prepare Environment
-        uses: actions/setup-python@v4
+      - uses: actions/setup-python@v4
         with:
           python-version: 3.10
       - uses: actions/cache@v2
         with:
           key: ${{ github.ref }}
           path: .cache
-        run: pip install -r requirements.txt
-      - name: Build notebook
-        run: mkdocs build
-      - name: Deploy to server
-        uses: easingthemes/ssh-deploy@v2
+      - run: pip install -r requirements.txt
+      - run: mkdocs build
+      - uses: easingthemes/ssh-deploy@v2
         with:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SOURCE: "site/"
