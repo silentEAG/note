@@ -1,6 +1,6 @@
 # SilentE's notebook
 
-个人 notebook，基于 Mkdocs + Material 搭建,部分样式来自(偷)于[tonycrane](https://note.tonycrane.cc/) ，环境部署在 Vercel 上。
+个人 notebook，基于 Mkdocs + Material 搭建，部分样式来自(偷)于 [tonycrane](https://note.tonycrane.cc/) 。
 
 阅读愉快😘！
 
