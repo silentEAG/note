@@ -1,13 +1,18 @@
 {
-    "headers": [
-      {
-        "source": "/(.*).(jpe?g|png|ico|webp|svg|mp4|gif|xml|ttf|woff2?)",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "public, max-age=31536000, immutable"
-          }
-        ]
-      }
-    ]
+  "headers": [
+    {
+      "source": "/(.*).(jpe?g|png|ico|webp|svg|mp4|gif|xml|ttf|woff2?)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "master": false
+    }
   }
+}
