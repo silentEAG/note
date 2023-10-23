@@ -49,7 +49,7 @@ jobs:
           path: site/
       - run: npm install --global vercel@latest
       - run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-      - run: mkdir .vercel && mkdir .vercel/output && mv site/ .vercel/output/
+      - run: mv site/ .vercel/output/
       - run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
 
       
