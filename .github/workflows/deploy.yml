@@ -43,12 +43,16 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/download-artifact@v3
         with:
           name: notebook
           path: site/
       - run: npm install --global vercel@latest
       - run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+      - run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
       - run: mv site/ .vercel/output/
       - run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
 
