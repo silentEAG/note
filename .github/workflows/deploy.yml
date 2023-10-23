@@ -1,10 +1,14 @@
+
 name: Deploy
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 on:
   push:
     branches:
       - master
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,13 +23,58 @@ jobs:
           path: .cache
       - run: pip install -r requirements.txt
       - run: mkdocs build
-      - uses: easingthemes/ssh-deploy@v2
+
+      - uses: actions/upload-artifact@v3
         with:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          SOURCE: "site/"
-          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
-          REMOTE_PORT: ${{ secrets.REMOTE_PORT }}
-          REMOTE_USER: ${{ secrets.REMOTE_USER }}
-          TARGET: ${{ secrets.REMOTE_TARGET }}
-          EXCLUDE: "/dist/, /node_modules/"
+          name: notebook
+          path: site/
+
+      # - uses: easingthemes/ssh-deploy@v2
+      #   with:
+      #     SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      #     SOURCE: "site/"
+      #     REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+      #     REMOTE_PORT: ${{ secrets.REMOTE_PORT }}
+      #     REMOTE_USER: ${{ secrets.REMOTE_USER }}
+      #     TARGET: ${{ secrets.REMOTE_TARGET }}
+      #     EXCLUDE: "/dist/, /node_modules/"
+
+  deploy-vercel:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: notebook
+          path: site/
+      - run: npm install --global vercel@latest
+      - run: mkdir .vercel && mkdir .vercel/output && mv site/ .vercel/output/
+      - run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
+
+      
+
+  # deploy:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0
+  #     - uses: actions/setup-python@v4
+  #       with:
+  #         python-version: '3.10'
+  #     - uses: actions/cache@v2
+  #       with:
+  #         key: ${{ github.ref }}
+  #         path: .cache
+  #     - run: pip install -r requirements.txt
+  #     - run: mkdocs build
+  #     - uses: easingthemes/ssh-deploy@v2
+  #       with:
+  #         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+  #         SOURCE: "site/"
+  #         REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+  #         REMOTE_PORT: ${{ secrets.REMOTE_PORT }}
+  #         REMOTE_USER: ${{ secrets.REMOTE_USER }}
+  #         TARGET: ${{ secrets.REMOTE_TARGET }}
+  #         EXCLUDE: "/dist/, /node_modules/"
 
