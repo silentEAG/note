@@ -106,6 +106,7 @@ nav:
         - Web/Pentest/Point/BloodHound.md
       - 靶场:
         - Web/Pentest/Walkthrough/hongri1.md
+        - Web/Pentest/Walkthrough/hongri4.md
         - Web/Pentest/Walkthrough/Cloud-Spoofing.md
       - Web/Pentest/note.md
     - Writeups:
@@ -140,12 +141,15 @@ nav:
         - Blockchain/keypoint/Solana/index.md
         - Blockchain/keypoint/Solana/Solana.md
         - Blockchain/keypoint/Solana/Solana-2.md
+    - Challenge:
+      - Blockchain/challenge/MetaTrustctf2023.md
 
   - Misc:
     - Misc/index.md
     - Misc/command.md
     - 编译原理:
       - Misc/compile/LLVM-tutor.md
+      - Misc/compile/ollvm-rust.md
     - IOT:
       - Misc/IOT/starter.md
     - 杂项:
