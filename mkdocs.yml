@@ -101,8 +101,12 @@ nav:
       - Web/Java/HessianWays.md
     - 渗透相关:
       - Web/Pentest/index.md
+      - 知识点:
+        - Web/Pentest/Point/AD.md
+        - Web/Pentest/Point/BloodHound.md
       - 靶场:
         - Web/Pentest/Walkthrough/hongri1.md
+        - Web/Pentest/Walkthrough/Cloud-Spoofing.md
       - Web/Pentest/note.md
     - Writeups:
       - Web/Writeups/Idek2023.md
