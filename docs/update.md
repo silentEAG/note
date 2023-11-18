@@ -4,6 +4,9 @@ hide_comments: true
 
 # 更新记录
 
+??? info "2023/11/18"
+    - 更新 [MetaTrustCTF2023 - StakingPool](./Blockchain/challenge/MetaTrustctf2023.md) 部分题
+
 ??? info "2023/11/15"
     - 更新 [春秋云境 - Spooling](./Web/Pentest/Walkthrough/Cloud-Spoofing.md)
     - 更新 [MetaTrustCTF2023](./Blockchain/challenge/MetaTrustctf2023.md) 部分题

